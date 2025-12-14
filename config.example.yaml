@@ -1,0 +1,48 @@
+# Prospect Scraper Configuration
+# Copy to config.yaml and customize
+# Usage: prospect search "plumber" "Sydney" --config config.yaml
+
+# Priority calculation weights (must sum to 1.0)
+fit_weight: 0.4
+opportunity_weight: 0.6
+
+# Fit score component weights (max 100 total)
+fit_website: 15     # Has a website
+fit_phone: 15       # Has phone number
+fit_email: 10       # Has email address
+fit_maps: 15        # Present in Google Maps
+fit_rating: 10      # Has 4.0+ star rating
+fit_reviews: 10     # Has 10+ reviews
+fit_ads: 10         # Running Google Ads
+fit_organic: 15     # Top 10 organic results
+
+# Opportunity score component weights
+opp_no_analytics: 15  # No Google Analytics
+opp_no_pixel: 10      # No Facebook Pixel
+opp_no_booking: 15    # No booking system
+opp_no_email: 10      # No email visible
+opp_diy_cms: 10       # Using DIY CMS (Wix, etc.)
+opp_slow_site: 10     # Slow loading site
+opp_has_ads: -10      # Already running ads (negative = reduces opportunity)
+opp_poor_seo: 20      # Poor organic ranking
+
+# Performance settings
+enrichment_timeout: 10    # Website fetch timeout in seconds
+enrichment_parallel: 1    # Parallel enrichment workers
+cache_enabled: true       # Cache enrichment results
+cache_ttl: 3600           # Cache TTL in seconds (1 hour)
+
+# CMS platforms considered "DIY" (higher opportunity)
+diy_cms:
+  - Wix
+  - Weebly
+  - GoDaddy Website Builder
+  - Squarespace
+  - Jimdo
+  - Carrd
+
+# Extra domains to filter out (in addition to built-in list)
+# Uncomment and add domains as needed
+# extra_filter_domains:
+#   - somelocaldirectory.com.au
+#   - anotherdirectory.com

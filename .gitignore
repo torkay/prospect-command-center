@@ -1,0 +1,93 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Environment
+.env
+.env.local
+*.env
+!.env.example
+!config/example.env
+
+# Credentials (NEVER commit)
+credentials.json
+*credentials*.json
+*.pem
+*.key
+
+# Data
+*.csv
+*.json
+!config/*.json
+!package.json
+data/
+output/
+results/
+raw_*.json
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+*.cache
+
+# Claude Code
+.claude/
+
+# Development docs (not for repo)
+CLAUDE_CODE_PLAN.md
+DECISION_SUMMARY.md
+MASTER_PROMPT.md
+SPEC.md
+QUICKSTART.md
+*.docx
+
+# Debug output
+debug_output/

@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  prospect-scraper:
+    image: ghcr.io/${GITHUB_REPOSITORY:-prospect-scraper}:${VERSION:-latest}
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - SERPAPI_KEY=${SERPAPI_KEY}
+      - GOOGLE_SHEETS_CREDENTIALS=${GOOGLE_SHEETS_CREDENTIALS:-}
+      - GOOGLE_SHEETS_CREDENTIALS_FILE=${GOOGLE_SHEETS_CREDENTIALS_FILE:-}
+    volumes:
+      - prospect-data:/app/data
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Optional: nginx reverse proxy for SSL termination
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./certs:/etc/nginx/certs:ro
+  #   depends_on:
+  #     - prospect-scraper
+
+volumes:
+  prospect-data:

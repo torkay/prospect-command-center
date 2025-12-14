@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  prospect-scraper:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - SERPAPI_KEY=${SERPAPI_KEY}
+      - GOOGLE_SHEETS_CREDENTIALS=${GOOGLE_SHEETS_CREDENTIALS:-}
+      - GOOGLE_SHEETS_CREDENTIALS_FILE=${GOOGLE_SHEETS_CREDENTIALS_FILE:-}
+    volumes:
+      - prospect-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  prospect-data:
