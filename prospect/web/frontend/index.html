@@ -194,6 +194,35 @@
             }
         }
 
+        /* Hamburger button (tablet only) */
+        .hamburger-btn {
+            display: none;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+
+        .hamburger-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .hamburger-btn:active {
+            background: var(--border);
+        }
+
+        /* Show hamburger only on tablet (640px - 1024px) */
+        @media (min-width: 640px) and (max-width: 1024px) {
+            .hamburger-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
         /* Mobile: Bottom navigation */
         @media (max-width: 640px) {
             .sidebar {
@@ -1293,12 +1322,19 @@
         </div>
     </aside>
 
+    <!-- Sidebar Overlay (Tablet) -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
     <!-- Main Content -->
     <main class="main-content">
         <!-- Header -->
         <header class="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur border-b border-zinc-800">
             <div class="flex items-center justify-between px-6 py-3">
                 <div class="flex items-center gap-4">
+                    <!-- Hamburger button (tablet only) -->
+                    <button id="hamburger-btn" class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
                     <h1 id="page-title" class="text-lg font-semibold">Dashboard</h1>
                 </div>
 
@@ -1505,12 +1541,24 @@
 
         function updateLayoutForDevice() {
             const mobile = isMobile();
+            const tablet = isTablet();
+            const desktop = isDesktop();
 
             // Update bottom nav active state
             updateBottomNav(currentPage);
 
             // Update FAB icon based on context
             updateFabIcon();
+
+            // Reset sidebar state when crossing to desktop or mobile
+            if (desktop || mobile) {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('sidebar-overlay');
+
+                if (sidebar) sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('visible');
+                document.body.style.overflow = '';
+            }
         }
 
         // ============================================
@@ -1547,6 +1595,41 @@
             document.getElementById('mobile-menu-overlay').classList.remove('visible');
             document.getElementById('mobile-menu').classList.remove('open');
             document.body.style.overflow = '';
+        }
+
+        // ============================================
+        // Tablet Sidebar Navigation
+        // ============================================
+        function openSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            if (sidebar) sidebar.classList.add('open');
+            if (overlay) overlay.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        function isSidebarOpen() {
+            const sidebar = document.querySelector('.sidebar');
+            return sidebar && sidebar.classList.contains('open');
         }
 
         // FAB context-aware action
@@ -1673,6 +1756,11 @@
             // Update mobile navigation
             updateBottomNav(page);
             updateFabIcon();
+
+            // Auto-close sidebar on tablet after navigation
+            if (isTablet() && isSidebarOpen()) {
+                closeSidebar();
+            }
 
             // Load page
             switch (page) {
@@ -2843,10 +2931,14 @@
                     openCommandPalette();
                 }
 
-                // Escape - Close palette or detail panel
+                // Escape - Close palette, detail panel, or sidebar
                 if (e.key === 'Escape') {
                     closeCommandPalette();
                     closeDetailPanel();
+                    // Close sidebar on tablet
+                    if (isTablet() && isSidebarOpen()) {
+                        closeSidebar();
+                    }
                 }
 
                 // / - Focus search
