@@ -2,9 +2,11 @@
 
 import asyncio
 import logging
+from datetime import datetime
 
 from prospect.web.state import job_manager, JobStatus
 from prospect.web.api.v1.models import SearchRequest
+from prospect.web.database import SessionLocal, Search, save_prospects_from_results
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +64,8 @@ async def run_search_task(job_id: str, request: SearchRequest):
             )
             return
 
-        # Deduplicate
-        prospects = deduplicate_serp_results(serp_results)
+        # Deduplicate (pass location for phone validation)
+        prospects = deduplicate_serp_results(serp_results, location=request.location)
 
         # Apply domain exclusions
         if filters.exclude_domains:
@@ -157,7 +159,58 @@ async def run_search_task(job_id: str, request: SearchRequest):
         # Limit results
         prospects = prospects[:request.limit]
 
-        # Phase 4: Complete
+        # Phase 4: Save to database
+        await job_manager.update_job(
+            job_id,
+            progress_message="Saving results..."
+        )
+
+        # Get search_id and campaign_id from job config
+        search_id = job.config.get("search_id") if job.config else None
+        campaign_id = job.config.get("campaign_id") if job.config else None
+
+        # Create or update search record
+        db = SessionLocal()
+        try:
+            if search_id:
+                # Update existing search record (from campaign run)
+                search = db.query(Search).filter(Search.id == search_id).first()
+                if search:
+                    search.status = "complete"
+                    search.total_found = len(prospects)
+                    search.avg_fit_score = sum(p.fit_score for p in prospects) / len(prospects) if prospects else 0
+                    search.avg_opportunity_score = sum(p.opportunity_score for p in prospects) / len(prospects) if prospects else 0
+                    if job.created_at:
+                        search.duration_ms = int((datetime.now() - job.created_at).total_seconds() * 1000)
+                    db.commit()
+            else:
+                # Create new search record
+                search = Search(
+                    campaign_id=campaign_id,
+                    business_type=request.business_type,
+                    location=request.location,
+                    query=f"{request.business_type} in {request.location}",
+                    status="complete",
+                    total_found=len(prospects),
+                    avg_fit_score=sum(p.fit_score for p in prospects) / len(prospects) if prospects else 0,
+                    avg_opportunity_score=sum(p.opportunity_score for p in prospects) / len(prospects) if prospects else 0,
+                    duration_ms=int((datetime.now() - job.created_at).total_seconds() * 1000) if job.created_at else None,
+                )
+                db.add(search)
+                db.commit()
+                db.refresh(search)
+                search_id = search.id
+
+            # Save prospects to database
+            if prospects and search_id:
+                save_prospects_from_results(db, search_id, prospects)
+                logger.info(f"Saved {len(prospects)} prospects to database for search {search_id}")
+        except Exception as e:
+            logger.exception(f"Failed to save search results to database: {e}")
+        finally:
+            db.close()
+
+        # Phase 5: Complete
         await job_manager.update_job(
             job_id,
             status=JobStatus.COMPLETE,

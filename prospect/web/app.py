@@ -1,5 +1,6 @@
 """FastAPI application factory."""
 
+import os
 import logging
 from pathlib import Path
 
@@ -7,6 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+from prospect.web.database import init_db
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +24,30 @@ FRONTEND_DIR = WEB_DIR / "frontend"
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
 
+    # Initialize database
+    init_db()
+
     app = FastAPI(
-        title="Prospect Scraper API",
-        description="Internal API for prospect discovery",
+        title="Prospect Command Center",
+        description="Marketing prospect discovery and management tool",
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
+    )
+
+    # CORS middleware for production
+    origins = os.environ.get("ALLOWED_ORIGINS", "*")
+    if origins != "*":
+        origins = [o.strip() for o in origins.split(",")]
+    else:
+        origins = ["*"]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Templates (for legacy routes)
@@ -44,11 +66,7 @@ def create_app() -> FastAPI:
     from prospect.web.ws import router as ws_router
     app.include_router(ws_router)
 
-    # Legacy HTML routes (kept at root for backward compatibility)
-    from prospect.web.routes import router as html_router
-    app.include_router(html_router, tags=["legacy"])
-
-    # Serve frontend SPA
+    # Serve frontend SPA at root - MUST be before legacy routes
     @app.get("/", response_class=HTMLResponse)
     async def serve_frontend(request: Request):
         """Serve the frontend SPA."""
@@ -59,6 +77,10 @@ def create_app() -> FastAPI:
             # Redirect to legacy UI if new frontend not found
             from fastapi.responses import RedirectResponse
             return RedirectResponse(url="/legacy/")
+
+    # Legacy HTML routes (moved to /legacy prefix to not conflict with new frontend)
+    from prospect.web.routes import router as html_router
+    app.include_router(html_router, prefix="/legacy", tags=["legacy"])
 
     # Serve frontend static files
     if FRONTEND_DIR.exists():

@@ -7,3 +7,8 @@ healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+# Persistent volume for SQLite database
+# Database persists across deploys at /data/prospects.db
+[[volumes]]
+mount = "/data"

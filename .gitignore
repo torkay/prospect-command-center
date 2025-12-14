@@ -63,6 +63,11 @@ output/
 results/
 raw_*.json
 
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
 # Docker
 .docker/
 

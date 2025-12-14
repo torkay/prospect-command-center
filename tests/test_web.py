@@ -21,41 +21,42 @@ class TestWebPages:
     """Test web page rendering."""
 
     def test_index_page(self, client):
-        """Index page should load."""
+        """Index page should load the Command Center."""
         response = client.get("/")
         assert response.status_code == 200
-        assert "Prospect Scraper" in response.text
-        assert "Business Type" in response.text
-        assert "Location" in response.text
+        # New Command Center frontend
+        assert "Prospect" in response.text
+        assert "Command Center" in response.text
 
-    def test_settings_page(self, client):
-        """Settings page should load."""
-        response = client.get("/settings")
+    def test_legacy_settings_page(self, client):
+        """Legacy settings page should load."""
+        response = client.get("/legacy/settings")
         assert response.status_code == 200
         assert "SerpAPI" in response.text
         assert "Google Sheets" in response.text
 
-    def test_index_shows_form(self, client):
-        """Index page should contain search form."""
+    def test_index_shows_search_form(self, client):
+        """Index page should contain search functionality."""
         response = client.get("/")
         assert response.status_code == 200
-        assert 'name="business_type"' in response.text
-        assert 'name="location"' in response.text
-        assert 'name="limit"' in response.text
+        # New frontend uses different form structure
+        assert 'business_type' in response.text.lower() or 'Business Type' in response.text
 
-    def test_index_has_htmx(self, client):
-        """Index page should include HTMX."""
+    def test_index_uses_modern_stack(self, client):
+        """Index page should use modern frontend stack."""
         response = client.get("/")
         assert response.status_code == 200
-        assert "htmx.org" in response.text
+        # Uses Tailwind and Lucide icons
+        assert "tailwindcss" in response.text
+        assert "lucide" in response.text
 
 
 class TestSearchValidation:
-    """Test search input validation."""
+    """Test legacy search input validation."""
 
     def test_search_requires_business_type(self, client):
-        """Search should validate business type."""
-        response = client.post("/search", data={
+        """Legacy search should validate business type."""
+        response = client.post("/legacy/search", data={
             "business_type": "",
             "location": "Sydney",
             "limit": 10,
@@ -64,8 +65,8 @@ class TestSearchValidation:
         assert response.status_code in [200, 422]
 
     def test_search_requires_location(self, client):
-        """Search should validate location."""
-        response = client.post("/search", data={
+        """Legacy search should validate location."""
+        response = client.post("/legacy/search", data={
             "business_type": "plumber",
             "location": "",
             "limit": 10,
@@ -74,8 +75,8 @@ class TestSearchValidation:
         assert response.status_code in [200, 422]
 
     def test_search_starts_job(self, client):
-        """Valid search should start a job and return progress."""
-        response = client.post("/search", data={
+        """Valid legacy search should start a job and return progress."""
+        response = client.post("/legacy/search", data={
             "business_type": "plumber",
             "location": "Sydney",
             "limit": 5,
@@ -250,25 +251,56 @@ class TestExportCSVString:
 
 
 class TestSearchStatusEndpoint:
-    """Test the search status endpoint."""
+    """Test the legacy search status endpoint."""
 
     def test_status_not_found(self, client):
         """Should return error for nonexistent job."""
-        response = client.get("/search/nonexistent/status")
+        response = client.get("/legacy/search/nonexistent/status")
         assert response.status_code == 200
         assert "not found" in response.text.lower() or "error" in response.text.lower()
 
 
 class TestExportEndpoints:
-    """Test export endpoints."""
+    """Test legacy export endpoints."""
 
     def test_csv_export_not_found(self, client):
         """Should return 404 for nonexistent job."""
-        response = client.get("/search/nonexistent/export/csv")
+        response = client.get("/legacy/search/nonexistent/export/csv")
         assert response.status_code == 404
 
     def test_sheets_export_not_found(self, client):
         """Should return error for nonexistent job."""
-        response = client.post("/search/nonexistent/export/sheets")
+        response = client.post("/legacy/search/nonexistent/export/sheets")
         assert response.status_code == 200
         assert "not found" in response.text.lower() or "error" in response.text.lower()
+
+
+class TestNewAPIEndpoints:
+    """Test new Command Center API endpoints."""
+
+    def test_dashboard_summary(self, client):
+        """Dashboard summary should return stats."""
+        response = client.get("/api/v1/dashboard/summary")
+        assert response.status_code == 200
+        data = response.json()
+        assert "totals" in data
+        assert "pipeline" in data
+
+    def test_campaigns_list(self, client):
+        """Campaigns list should return empty list initially."""
+        response = client.get("/api/v1/campaigns")
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_prospects_list(self, client):
+        """Prospects list should return empty list initially."""
+        response = client.get("/api/v1/prospects")
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_prospects_stats(self, client):
+        """Prospects stats should return zero stats initially."""
+        response = client.get("/api/v1/prospects/stats")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 0

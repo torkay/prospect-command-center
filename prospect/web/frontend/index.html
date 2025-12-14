@@ -1,190 +1,1905 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prospect Scraper</title>
+    <title>Prospect Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/app/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --border: #27272a;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #22c55e;
+            --accent-hover: #16a34a;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Score badges */
+        .score-high { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .score-med { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .score-low { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Status badges */
+        .status-new { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .status-qualified { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+        .status-contacted { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+        .status-meeting { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+        .status-won { background: rgba(34, 197, 94, 0.3); color: #4ade80; }
+        .status-lost { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+        .status-skipped { background: rgba(113, 113, 122, 0.15); color: #a1a1aa; }
+
+        /* Hover states */
+        .hover-row:hover { background: var(--bg-tertiary); }
+
+        /* Command palette */
+        .cmd-palette {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 560px;
+            max-height: 400px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 200;
+            animation: slideIn 0.2s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            margin: 2px 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .sidebar-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-item.active {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--accent);
+        }
+
+        /* Main content */
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* Input styling */
+        .input-field {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            width: 100%;
+            transition: border-color 0.15s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Button */
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        /* Dropdown */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-width: 180px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 50;
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Kbd */
+        kbd {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Loading spinner */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 420px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            transform: translateX(100%);
+            transition: transform 0.2s ease;
+            z-index: 45;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 320px;
+        }
+
+        .detail-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .detail-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-field:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-size: 13px;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
+        }
+
+        .detail-notes {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: var(--text-secondary);
+        }
+
+        /* Business rating in table */
+        .business-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .business-rating .star {
+            color: #fbbf24;
+        }
+
+        /* Notes preview */
+        .notes-preview {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .notes-preview:hover {
+            color: var(--text-primary);
+        }
+
+        /* Copy icon */
+        .copy-icon {
+            width: 12px;
+            height: 12px;
+            opacity: 0;
+            margin-left: 4px;
+            transition: opacity 0.15s;
+            cursor: pointer;
+        }
+        .detail-field.clickable:hover .copy-icon,
+        .contact-phone:hover .copy-icon,
+        .contact-email:hover .copy-icon,
+        .copyable:hover .copy-icon {
+            opacity: 0.6;
+        }
+        .detail-field.clickable {
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 0 -8px;
+            padding: 8px;
+        }
+        .detail-field.clickable:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* SERP badges */
+        .serp-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .serp-ads {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+        }
+        .serp-maps {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+        .serp-organic {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        /* Status select styling */
+        .status-select-styled {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .status-select-styled.status-new { border-color: rgba(59, 130, 246, 0.5); }
+        .status-select-styled.status-qualified { border-color: rgba(168, 85, 247, 0.5); }
+        .status-select-styled.status-contacted { border-color: rgba(34, 197, 94, 0.5); }
+        .status-select-styled.status-meeting { border-color: rgba(249, 115, 22, 0.5); }
+        .status-select-styled.status-won { border-color: rgba(34, 197, 94, 0.8); }
+        .status-select-styled.status-lost { border-color: rgba(239, 68, 68, 0.5); }
+        .status-select-styled.status-skipped { border-color: rgba(113, 113, 122, 0.5); }
+
+        /* Text colors */
+        .text-green { color: #4ade80; }
+        .text-yellow { color: #fbbf24; }
+        .text-red { color: #f87171; }
+
+        /* Row states */
+        .data-table tbody tr.selected {
+            background: rgba(34, 197, 94, 0.1);
+        }
+        .data-table tbody tr.focused {
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
+        }
+
+        /* Detail panel link */
+        .detail-domain {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #60a5fa;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .detail-domain:hover {
+            text-decoration: underline;
+        }
+
+        /* Technical analysis field */
+        .tech-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+        .tech-field-label {
+            color: var(--text-muted);
+        }
+        .tech-field-value {
+            font-weight: 500;
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen font-mono">
-    <div class="max-w-6xl mx-auto p-4">
-
-        <!-- Header -->
-        <header class="flex items-center justify-between py-4 border-b border-gray-700">
-            <h1 class="text-xl font-bold text-green-400">prospect-scraper</h1>
-            <div class="flex items-center gap-4 text-sm">
-                <span id="status-serpapi" class="text-gray-500" title="SerpAPI status">&#9679;</span>
-                <span id="status-sheets" class="text-gray-500" title="Sheets status">&#9679;</span>
-                <a href="/docs" target="_blank" class="text-blue-400 hover:underline">API Docs</a>
-                <span id="version" class="text-gray-500">v0.0.0</span>
-            </div>
-        </header>
-
-        <!-- Main Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-
-            <!-- Left: Search Form -->
-            <div class="lg:col-span-1 space-y-4">
-                <div class="bg-gray-800 rounded p-4">
-                    <h2 class="text-sm text-gray-400 mb-3">NEW SEARCH</h2>
-
-                    <form id="search-form" class="space-y-3">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">BUSINESS TYPE</label>
-                            <input type="text" name="business_type"
-                                   placeholder="buyer's agent"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
-                                   required>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">LOCATION</label>
-                            <input type="text" name="location"
-                                   placeholder="Brisbane, QLD"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
-                                   required>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">LIMIT</label>
-                                <input type="number" name="limit" value="20" min="1" max="100"
-                                       class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-green-400 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">PARALLEL</label>
-                                <input type="number" name="parallel" value="3" min="1" max="10"
-                                       class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-green-400 focus:outline-none">
-                            </div>
-                        </div>
-
-                        <!-- Collapsible Filters -->
-                        <details class="text-sm">
-                            <summary class="text-gray-400 cursor-pointer hover:text-gray-300">Filters</summary>
-                            <div class="mt-2 space-y-2 pl-2 border-l border-gray-700">
-                                <div class="grid grid-cols-3 gap-2">
-                                    <div>
-                                        <label class="block text-xs text-gray-500">MIN FIT</label>
-                                        <input type="number" name="min_fit" value="0" min="0" max="100"
-                                               class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500">MIN OPP</label>
-                                        <input type="number" name="min_opportunity" value="0" min="0" max="100"
-                                               class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500">MIN PRI</label>
-                                        <input type="number" name="min_priority" value="0" min="0" max="100"
-                                               class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm">
-                                    </div>
-                                </div>
-                                <div class="flex gap-4">
-                                    <label class="flex items-center gap-2 text-gray-400">
-                                        <input type="checkbox" name="require_phone" class="rounded">
-                                        Phone
-                                    </label>
-                                    <label class="flex items-center gap-2 text-gray-400">
-                                        <input type="checkbox" name="require_email" class="rounded">
-                                        Email
-                                    </label>
-                                    <label class="flex items-center gap-2 text-gray-400">
-                                        <input type="checkbox" name="skip_enrichment" class="rounded">
-                                        Fast
-                                    </label>
-                                </div>
-                            </div>
-                        </details>
-
-                        <button type="submit"
-                                class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded transition"
-                                id="submit-btn">
-                            <span id="submit-text">Search</span>
-                            <span id="submit-loading" class="hidden">Searching...</span>
-                        </button>
-                    </form>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="p-4 border-b border-zinc-800">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <i data-lucide="radar" class="w-5 h-5 text-green-400"></i>
                 </div>
-
-                <!-- Jobs List -->
-                <div class="bg-gray-800 rounded p-4">
-                    <h2 class="text-sm text-gray-400 mb-3">RECENT JOBS</h2>
-                    <div id="jobs-list" class="space-y-2 text-sm max-h-64 overflow-y-auto">
-                        <p class="text-gray-500 text-xs">No jobs yet</p>
-                    </div>
+                <div>
+                    <div class="font-semibold text-sm">Prospect</div>
+                    <div class="text-xs text-zinc-500">Command Center</div>
                 </div>
-            </div>
-
-            <!-- Right: Results -->
-            <div class="lg:col-span-2">
-                <div class="bg-gray-800 rounded p-4">
-                    <!-- Progress -->
-                    <div id="progress-container" class="hidden mb-4">
-                        <div class="flex justify-between text-sm text-gray-400 mb-1">
-                            <span id="progress-message">Searching...</span>
-                            <span id="progress-count">0/0</span>
-                        </div>
-                        <div class="h-2 bg-gray-700 rounded overflow-hidden">
-                            <div id="progress-bar" class="h-full bg-green-500 transition-all" style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Results Header -->
-                    <div id="results-header" class="hidden flex justify-between items-center mb-4">
-                        <div>
-                            <span id="results-count" class="text-lg font-bold text-green-400">0</span>
-                            <span class="text-gray-400">prospects</span>
-                            <span id="results-stats" class="text-sm text-gray-500 ml-2"></span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button id="export-csv" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">CSV</button>
-                            <button id="export-json" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">JSON</button>
-                            <button id="export-sheets" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">Sheets</button>
-                        </div>
-                    </div>
-
-                    <!-- Results Table -->
-                    <div id="results-table" class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="text-left text-gray-400 border-b border-gray-700">
-                                <tr>
-                                    <th class="pb-2 cursor-pointer hover:text-white" data-sort="name">Name</th>
-                                    <th class="pb-2 cursor-pointer hover:text-white" data-sort="fit_score">Fit</th>
-                                    <th class="pb-2 cursor-pointer hover:text-white" data-sort="opportunity_score">Opp</th>
-                                    <th class="pb-2 cursor-pointer hover:text-white" data-sort="priority_score">Pri</th>
-                                    <th class="pb-2">Contact</th>
-                                    <th class="pb-2">Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody id="results-body">
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Empty State -->
-                    <div id="empty-state" class="text-center py-12 text-gray-500">
-                        <p>No results yet. Run a search to find prospects.</p>
-                        <p class="text-sm mt-2">Keyboard: <kbd class="bg-gray-700 px-1 rounded">/</kbd> to focus search</p>
-                    </div>
-                </div>
-
-                <!-- Raw Data Panel -->
-                <details class="mt-4 bg-gray-800 rounded">
-                    <summary class="p-4 text-sm text-gray-400 cursor-pointer hover:text-gray-300">Raw Data</summary>
-                    <pre id="raw-data" class="p-4 text-xs overflow-x-auto max-h-64 bg-gray-900 rounded-b">{}</pre>
-                </details>
             </div>
         </div>
 
-        <!-- Keyboard Shortcuts -->
-        <footer class="mt-8 py-4 border-t border-gray-700 text-xs text-gray-500">
-            <span class="mr-4"><kbd class="bg-gray-700 px-1 rounded">/</kbd> Search</span>
-            <span class="mr-4"><kbd class="bg-gray-700 px-1 rounded">Esc</kbd> Clear</span>
-            <span class="mr-4"><kbd class="bg-gray-700 px-1 rounded">j</kbd>/<kbd class="bg-gray-700 px-1 rounded">k</kbd> Navigate</span>
-            <span><kbd class="bg-gray-700 px-1 rounded">e</kbd> Export</span>
-        </footer>
+        <nav class="py-4">
+            <div class="px-4 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Main</div>
+
+            <div class="sidebar-item active" data-page="dashboard">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                Dashboard
+            </div>
+
+            <div class="sidebar-item" data-page="search">
+                <i data-lucide="search" class="w-4 h-4"></i>
+                New Search
+            </div>
+
+            <div class="sidebar-item" data-page="prospects">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                All Prospects
+                <span class="ml-auto text-xs bg-zinc-700 px-2 py-0.5 rounded" id="prospect-count">0</span>
+            </div>
+
+            <div class="px-4 mt-6 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Campaigns</div>
+
+            <div class="sidebar-item" data-page="campaigns">
+                <i data-lucide="folder" class="w-4 h-4"></i>
+                All Campaigns
+            </div>
+
+            <div id="campaign-list" class="mt-2">
+                <!-- Dynamic campaign list -->
+            </div>
+
+            <div class="px-4 mt-6 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Pipeline</div>
+
+            <div class="sidebar-item" data-page="prospects" data-filter="status=new">
+                <i data-lucide="inbox" class="w-4 h-4"></i>
+                New
+                <span class="ml-auto text-xs" id="pipeline-new">0</span>
+            </div>
+
+            <div class="sidebar-item" data-page="prospects" data-filter="status=qualified">
+                <i data-lucide="star" class="w-4 h-4"></i>
+                Qualified
+                <span class="ml-auto text-xs" id="pipeline-qualified">0</span>
+            </div>
+
+            <div class="sidebar-item" data-page="prospects" data-filter="status=contacted">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                Contacted
+                <span class="ml-auto text-xs" id="pipeline-contacted">0</span>
+            </div>
+        </nav>
+
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800">
+            <div class="flex items-center justify-between text-xs text-zinc-500">
+                <span>Press</span>
+                <kbd>Cmd+K</kbd>
+                <span>for commands</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur border-b border-zinc-800">
+            <div class="flex items-center justify-between px-6 py-3">
+                <div class="flex items-center gap-4">
+                    <h1 id="page-title" class="text-lg font-semibold">Dashboard</h1>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="openCommandPalette()" class="btn-secondary text-sm">
+                        <i data-lucide="command" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Command</span>
+                        <kbd class="ml-2">Cmd+K</kbd>
+                    </button>
+
+                    <div id="api-status" class="flex items-center gap-2 text-sm">
+                        <span class="w-2 h-2 rounded-full bg-zinc-500"></span>
+                        <span class="text-zinc-500">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div id="page-content" class="p-6">
+            <!-- Dynamic content loaded here -->
+        </div>
+    </main>
+
+    <!-- Detail Panel (slide-out) -->
+    <aside class="detail-panel" id="detail-panel">
+        <div class="detail-header">
+            <h2 id="detail-title">Prospect Details</h2>
+            <button class="btn-secondary" onclick="closeDetailPanel()" style="padding: 4px 8px;">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+            </button>
+        </div>
+        <div class="detail-content" id="detail-content">
+            <!-- Loaded dynamically -->
+        </div>
+    </aside>
+
+    <!-- Command Palette (hidden by default) -->
+    <div id="cmd-palette" class="cmd-palette hidden">
+        <div class="p-3 border-b border-zinc-800">
+            <div class="flex items-center gap-3">
+                <i data-lucide="search" class="w-5 h-5 text-zinc-500"></i>
+                <input
+                    type="text"
+                    id="cmd-input"
+                    placeholder="Type a command or search..."
+                    class="bg-transparent border-none outline-none w-full text-sm"
+                    autocomplete="off"
+                >
+                <kbd class="text-zinc-500">ESC</kbd>
+            </div>
+        </div>
+        <div id="cmd-results" class="max-h-80 overflow-y-auto p-2">
+            <!-- Command results -->
+        </div>
     </div>
 
-    <script src="/app/app.js"></script>
+    <!-- Overlay for modals -->
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="closeCommandPalette()"></div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // ============================================
+        // Constants & State
+        // ============================================
+        const API = '/api/v1';
+        let currentPage = 'dashboard';
+        let currentFilters = {};
+        let selectedProspects = new Set();
+        let currentJobId = null;
+
+        // ============================================
+        // Initialize
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await checkApiStatus();
+            await loadDashboard();
+            await loadDashboardCounts();  // Load sidebar counts
+            setupKeyboardShortcuts();
+            setupNavigation();
+            loadCampaigns();
+        });
+
+        // ============================================
+        // API Status
+        // ============================================
+        async function checkApiStatus() {
+            try {
+                const res = await fetch(`${API}/health`);
+                const data = await res.json();
+
+                const statusEl = document.getElementById('api-status');
+                if (data.serpapi) {
+                    statusEl.innerHTML = `
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span class="text-green-400">Connected</span>
+                    `;
+                } else {
+                    statusEl.innerHTML = `
+                        <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                        <span class="text-yellow-400">No API Key</span>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('api-status').innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span class="text-red-400">Offline</span>
+                `;
+            }
+        }
+
+        // ============================================
+        // Navigation
+        // ============================================
+        function setupNavigation() {
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const page = item.dataset.page;
+                    const filter = item.dataset.filter;
+
+                    navigateTo(page, filter);
+                });
+            });
+        }
+
+        function navigateTo(page, filter = null) {
+            // Update active state
+            document.querySelectorAll('.sidebar-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            const activeEl = filter
+                ? document.querySelector(`[data-page="${page}"][data-filter="${filter}"]`)
+                : document.querySelector(`[data-page="${page}"]:not([data-filter])`);
+            activeEl?.classList.add('active');
+
+            currentPage = page;
+            currentFilters = filter ? parseFilter(filter) : {};
+
+            // Load page
+            switch (page) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'search':
+                    loadSearchPage();
+                    break;
+                case 'prospects':
+                    loadProspectsPage();
+                    break;
+                case 'campaigns':
+                    loadCampaignsPage();
+                    break;
+            }
+        }
+
+        function parseFilter(filterStr) {
+            const params = {};
+            filterStr.split('&').forEach(pair => {
+                const [key, value] = pair.split('=');
+                params[key] = value;
+            });
+            return params;
+        }
+
+        // ============================================
+        // Dashboard
+        // ============================================
+        async function loadDashboard() {
+            document.getElementById('page-title').textContent = 'Dashboard';
+
+            try {
+                const [summary, insights, activity] = await Promise.all([
+                    fetch(`${API}/dashboard/summary`).then(r => r.json()),
+                    fetch(`${API}/dashboard/insights`).then(r => r.json()),
+                    fetch(`${API}/dashboard/activity`).then(r => r.json()),
+                ]);
+
+                // Update sidebar counts
+                document.getElementById('prospect-count').textContent = summary.totals.prospects;
+                if (summary.pipeline) {
+                    document.getElementById('pipeline-new').textContent = summary.pipeline.new || 0;
+                    document.getElementById('pipeline-qualified').textContent = summary.pipeline.qualified || 0;
+                    document.getElementById('pipeline-contacted').textContent = summary.pipeline.contacted || 0;
+                }
+
+                document.getElementById('page-content').innerHTML = `
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div class="card">
+                            <div class="text-sm text-zinc-500 mb-1">Total Prospects</div>
+                            <div class="text-3xl font-bold">${summary.totals.prospects}</div>
+                        </div>
+                        <div class="card">
+                            <div class="text-sm text-zinc-500 mb-1">This Week</div>
+                            <div class="text-3xl font-bold text-green-400">+${summary.this_week.prospects_found}</div>
+                        </div>
+                        <div class="card">
+                            <div class="text-sm text-zinc-500 mb-1">High Priority</div>
+                            <div class="text-3xl font-bold text-yellow-400">${summary.high_priority_prospects}</div>
+                        </div>
+                        <div class="card">
+                            <div class="text-sm text-zinc-500 mb-1">Campaigns</div>
+                            <div class="text-3xl font-bold">${summary.totals.campaigns}</div>
+                        </div>
+                    </div>
+
+                    <!-- Insights -->
+                    ${insights.length > 0 ? `
+                        <div class="mb-8">
+                            <h2 class="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">Insights</h2>
+                            <div class="space-y-3">
+                                ${insights.map(i => `
+                                    <div class="card flex items-start gap-4">
+                                        <div class="w-8 h-8 rounded-lg ${i.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'} flex items-center justify-center flex-shrink-0">
+                                            <i data-lucide="${i.type === 'action' ? 'alert-circle' : 'lightbulb'}" class="w-4 h-4"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-medium">${i.title}</div>
+                                            <div class="text-sm text-zinc-500 mt-1">${i.description}</div>
+                                        </div>
+                                        ${i.action ? `<button class="btn-secondary text-sm">${i.action}</button>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Quick Search -->
+                        <div>
+                            <h2 class="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">Quick Search</h2>
+                            <div class="card">
+                                <form id="quick-search-form" class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs text-zinc-500 mb-2">Business Type</label>
+                                        <input type="text" name="business_type" placeholder="e.g., plumber, accountant" class="input-field" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-zinc-500 mb-2">Location</label>
+                                        <input type="text" name="location" placeholder="e.g., Sydney, NSW" class="input-field" required>
+                                    </div>
+                                    <button type="submit" class="btn-primary w-full justify-center">
+                                        <i data-lucide="search" class="w-4 h-4"></i>
+                                        Find Prospects
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Top Campaigns -->
+                        <div>
+                            <h2 class="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">Top Campaigns</h2>
+                            <div class="card space-y-3">
+                                ${summary.top_campaigns.length > 0 ? summary.top_campaigns.map(c => `
+                                    <div class="flex items-center justify-between p-2 rounded hover:bg-zinc-800 cursor-pointer" onclick="runCampaign(${c.id})">
+                                        <div>
+                                            <div class="font-medium">${escapeHtml(c.name)}</div>
+                                            <div class="text-xs text-zinc-500">${escapeHtml(c.business_type)} - ${escapeHtml(c.location)}</div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-zinc-500">${c.run_count} runs</span>
+                                            <i data-lucide="play" class="w-4 h-4 text-green-400"></i>
+                                        </div>
+                                    </div>
+                                `).join('') : '<div class="text-zinc-500 text-sm">No campaigns yet. Create one from a search.</div>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    ${activity.length > 0 ? `
+                        <div class="mt-8">
+                            <h2 class="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">Recent Activity</h2>
+                            <div class="card space-y-3">
+                                ${activity.slice(0, 5).map(a => `
+                                    <div class="flex items-center gap-4 p-2">
+                                        <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                                            <i data-lucide="search" class="w-4 h-4 text-zinc-400"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-sm">${escapeHtml(a.title)}</div>
+                                            <div class="text-xs text-zinc-500">${escapeHtml(a.subtitle)}</div>
+                                        </div>
+                                        <div class="text-xs text-zinc-500">${formatDate(a.timestamp)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+
+                lucide.createIcons();
+
+                // Setup quick search
+                document.getElementById('quick-search-form')?.addEventListener('submit', handleQuickSearch);
+
+            } catch (e) {
+                document.getElementById('page-content').innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-red-400 mb-2">Failed to load dashboard</div>
+                        <div class="text-sm text-zinc-500">${e.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // Search Page
+        // ============================================
+        function loadSearchPage() {
+            document.getElementById('page-title').textContent = 'New Search';
+
+            document.getElementById('page-content').innerHTML = `
+                <div class="max-w-2xl">
+                    <div class="card">
+                        <form id="search-form" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Business Type</label>
+                                <input type="text" name="business_type" placeholder="e.g., buyer's agent, plumber, accountant" class="input-field" required>
+                                <div class="text-xs text-zinc-500 mt-1">What type of business are you looking for?</div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Location</label>
+                                <input type="text" name="location" placeholder="e.g., Brisbane, QLD" class="input-field" required>
+                                <div class="text-xs text-zinc-500 mt-1">City, suburb, or region to search</div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Max Results</label>
+                                <input type="number" name="limit" value="20" min="1" max="100" class="input-field w-32">
+                            </div>
+
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="skip_enrichment" class="rounded">
+                                    <span class="text-sm">Fast mode (skip website analysis)</span>
+                                </label>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="submit" class="btn-primary" id="search-submit-btn">
+                                    <i data-lucide="search" class="w-4 h-4"></i>
+                                    Find Prospects
+                                </button>
+                                <button type="button" class="btn-secondary" onclick="showSaveCampaignModal()">
+                                    <i data-lucide="bookmark" class="w-4 h-4"></i>
+                                    Save as Campaign
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Progress -->
+                    <div id="search-progress" class="card mt-6 hidden">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <i data-lucide="loader-2" class="w-4 h-4 text-green-400 animate-spin"></i>
+                            </div>
+                            <div>
+                                <div id="progress-title" class="font-medium">Searching...</div>
+                                <div id="progress-subtitle" class="text-sm text-zinc-500">Finding prospects</div>
+                            </div>
+                        </div>
+                        <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                            <div id="progress-bar" class="h-full bg-green-500 transition-all" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            lucide.createIcons();
+            document.getElementById('search-form').addEventListener('submit', handleSearch);
+        }
+
+        async function handleQuickSearch(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            // Navigate to search page and pre-fill
+            navigateTo('search');
+
+            // Pre-fill form after a brief delay
+            setTimeout(() => {
+                const form = document.getElementById('search-form');
+                if (form) {
+                    form.business_type.value = formData.get('business_type');
+                    form.location.value = formData.get('location');
+                    form.dispatchEvent(new Event('submit'));
+                }
+            }, 100);
+        }
+
+        async function handleSearch(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+
+            const request = {
+                business_type: formData.get('business_type'),
+                location: formData.get('location'),
+                limit: parseInt(formData.get('limit')) || 20,
+                skip_enrichment: formData.get('skip_enrichment') === 'on',
+            };
+
+            // Show progress
+            document.getElementById('search-progress').classList.remove('hidden');
+            const submitBtn = document.getElementById('search-submit-btn');
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch(`${API}/search`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(request)
+                });
+
+                const data = await res.json();
+                currentJobId = data.id;
+
+                // Connect WebSocket for progress
+                connectSearchWebSocket(data.id);
+
+            } catch (e) {
+                showToast('Search failed: ' + e.message, 'error');
+                document.getElementById('search-progress').classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        }
+
+        function connectSearchWebSocket(jobId) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws = new WebSocket(`${protocol}//${window.location.host}/ws/jobs/${jobId}`);
+
+            ws.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+
+                if (data.type === 'progress') {
+                    const pct = data.total > 0 ? (data.progress / data.total) * 100 : 0;
+                    document.getElementById('progress-bar').style.width = `${pct}%`;
+                    document.getElementById('progress-subtitle').textContent = data.message || `${data.progress}/${data.total}`;
+                } else if (data.type === 'complete') {
+                    showToast(`Found ${data.count} prospects!`, 'success');
+                    ws.close();
+                    navigateTo('prospects');
+                } else if (data.type === 'error') {
+                    showToast('Error: ' + data.message, 'error');
+                    document.getElementById('search-progress').classList.add('hidden');
+                    document.getElementById('search-submit-btn').disabled = false;
+                    ws.close();
+                }
+            };
+
+            ws.onerror = () => {
+                // Fallback to polling
+                pollJobStatus(jobId);
+            };
+        }
+
+        async function pollJobStatus(jobId) {
+            const poll = async () => {
+                try {
+                    const res = await fetch(`${API}/jobs/${jobId}`);
+                    const data = await res.json();
+
+                    const pct = data.progress_total > 0 ? (data.progress / data.progress_total) * 100 : 0;
+                    document.getElementById('progress-bar').style.width = `${pct}%`;
+                    document.getElementById('progress-subtitle').textContent = data.message;
+
+                    if (data.status === 'complete') {
+                        showToast(`Found ${data.results?.length || 0} prospects!`, 'success');
+                        navigateTo('prospects');
+                    } else if (data.status === 'error') {
+                        showToast('Error: ' + data.error, 'error');
+                        document.getElementById('search-progress').classList.add('hidden');
+                        document.getElementById('search-submit-btn').disabled = false;
+                    } else {
+                        setTimeout(poll, 500);
+                    }
+                } catch (e) {
+                    setTimeout(poll, 1000);
+                }
+            };
+            poll();
+        }
+
+        // ============================================
+        // Prospects Page
+        // ============================================
+        async function loadProspectsPage() {
+            document.getElementById('page-title').textContent = 'All Prospects';
+
+            // Build query string from filters
+            const params = new URLSearchParams(currentFilters);
+
+            try {
+                const [prospects, stats] = await Promise.all([
+                    fetch(`${API}/prospects?${params}`).then(r => r.json()),
+                    fetch(`${API}/prospects/stats`).then(r => r.json()),
+                ]);
+
+                document.getElementById('page-content').innerHTML = `
+                    <!-- Toolbar -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-4">
+                            <input type="text" placeholder="Search prospects..." class="input-field w-64" id="prospect-search">
+
+                            <select class="input-field w-40" id="status-filter">
+                                <option value="">All Status</option>
+                                <option value="new" ${currentFilters.status === 'new' ? 'selected' : ''}>New</option>
+                                <option value="qualified" ${currentFilters.status === 'qualified' ? 'selected' : ''}>Qualified</option>
+                                <option value="contacted" ${currentFilters.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+                                <option value="meeting" ${currentFilters.status === 'meeting' ? 'selected' : ''}>Meeting</option>
+                                <option value="won" ${currentFilters.status === 'won' ? 'selected' : ''}>Won</option>
+                                <option value="lost" ${currentFilters.status === 'lost' ? 'selected' : ''}>Lost</option>
+                                <option value="skipped" ${currentFilters.status === 'skipped' ? 'selected' : ''}>Skipped</option>
+                            </select>
+
+                            <select class="input-field w-40" id="sort-filter">
+                                <option value="priority_score">Priority</option>
+                                <option value="fit_score">Fit Score</option>
+                                <option value="opportunity_score">Opportunity</option>
+                                <option value="first_seen_at">Date Found</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-zinc-500">${stats.total} prospects</span>
+                            <button class="btn-secondary text-sm" onclick="exportProspects('csv')">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Bar -->
+                    <div class="flex items-center gap-6 mb-6 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-zinc-500">Avg Fit:</span>
+                            <span class="font-mono ${stats.avg_fit_score >= 60 ? 'text-green-400' : 'text-yellow-400'}">${stats.avg_fit_score}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-zinc-500">Avg Opportunity:</span>
+                            <span class="font-mono ${stats.avg_opportunity_score >= 60 ? 'text-green-400' : 'text-yellow-400'}">${stats.avg_opportunity_score}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-zinc-500">Contact Rate:</span>
+                            <span class="font-mono">${stats.contact_rate}%</span>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="card p-0 overflow-hidden">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="w-8"><input type="checkbox" id="select-all"></th>
+                                    <th>Business</th>
+                                    <th>Contact</th>
+                                    <th>Fit</th>
+                                    <th>Opp</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                    <th class="w-24"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="prospects-table-body">
+                                ${renderProspectsRows(prospects)}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                lucide.createIcons();
+
+                // Setup filters
+                document.getElementById('status-filter').addEventListener('change', (e) => {
+                    currentFilters.status = e.target.value;
+                    loadProspectsPage();
+                });
+
+                document.getElementById('sort-filter').addEventListener('change', (e) => {
+                    currentFilters.sort_by = e.target.value;
+                    loadProspectsPage();
+                });
+
+                // Setup search
+                document.getElementById('prospect-search').addEventListener('input', debounce((e) => {
+                    currentFilters.q = e.target.value;
+                    loadProspectsPage();
+                }, 300));
+
+                // Setup status selects
+                document.querySelectorAll('.status-select').forEach(select => {
+                    select.addEventListener('change', async (e) => {
+                        const id = e.target.dataset.id;
+                        const status = e.target.value;
+                        await updateProspectStatus(id, status);
+                    });
+                });
+
+            } catch (e) {
+                document.getElementById('page-content').innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-red-400 mb-2">Failed to load prospects</div>
+                        <div class="text-sm text-zinc-500">${e.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // Business Name Cleaning
+        // ============================================
+        function cleanBusinessName(name) {
+            if (!name) return '';
+            let clean = name;
+
+            // Remove star emojis and unicode stars
+            clean = clean.replace(/[\u2B50\u2605\u2606\u2729\u272A\u2730\uD83C\uDF1F]/g, '');
+
+            // Remove review counts like "2.2K+ Reviews"
+            clean = clean.replace(/\d+\.?\d*[Kk]?\+?\s*reviews?/gi, '');
+            clean = clean.replace(/\(\d+\.?\d*[Kk]?\+?\s*reviews?\)/gi, '');
+
+            // Cut at | or - or :
+            const delimiters = [' | ', ' - ', ': '];
+            for (const d of delimiters) {
+                if (clean.includes(d)) {
+                    clean = clean.split(d)[0];
+                }
+            }
+
+            // Remove common marketing suffixes
+            clean = clean.replace(/\s*-\s*local\s*&\s*reliable.*/i, '');
+            clean = clean.replace(/\s*-\s*trusted.*/i, '');
+            clean = clean.replace(/\s*-\s*best\s*reviewed.*/i, '');
+            clean = clean.replace(/\s*-\s*same[- ]?day.*/i, '');
+            clean = clean.replace(/\s*\d+\+?\s*local.*/i, '');
+            clean = clean.replace(/\s*-\s*#1\s*rated.*/i, '');
+            clean = clean.replace(/\s*-\s*fast\s*&\s*reliable.*/i, '');
+
+            // Clean whitespace
+            clean = clean.replace(/\s+/g, ' ').trim();
+
+            return clean;
+        }
+
+        function formatReviewCount(count) {
+            if (!count) return '';
+            if (count >= 1000) {
+                return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+            }
+            return count.toString();
+        }
+
+        function truncateNotes(notes, maxLen) {
+            if (!notes) return '-';
+            if (notes.length <= maxLen) return notes;
+            return smartTruncate(notes, maxLen);
+        }
+
+        function smartTruncate(text, maxLen) {
+            if (!text) return '';
+            if (text.length <= maxLen) return text;
+
+            // Find last space before maxLen
+            const truncated = text.substring(0, maxLen);
+            const lastSpace = truncated.lastIndexOf(' ');
+
+            if (lastSpace > maxLen * 0.6) {
+                // Good break point found
+                return truncated.substring(0, lastSpace) + '...';
+            }
+
+            // No good break point, just cut
+            return truncated + '...';
+        }
+
+        async function copyToClipboard(text, label) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(`${label} copied!`, 'success');
+            } catch (e) {
+                // Fallback for older browsers
+                const input = document.createElement('input');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast(`${label} copied!`, 'success');
+            }
+        }
+
+        function formatNumber(num) {
+            if (!num) return '0';
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+            }
+            return num.toString();
+        }
+
+        function renderProspectsRows(prospects) {
+            if (!prospects.length) {
+                return `<tr><td colspan="9" class="text-center py-12 text-zinc-500">No prospects found. Run a search to find some!</td></tr>`;
+            }
+
+            return prospects.map(p => {
+                const cleanName = cleanBusinessName(p.name) || 'Unknown';
+                const displayName = smartTruncate(cleanName, 32);
+
+                return `
+                <tr class="hover-row" data-id="${p.id}" style="cursor: pointer;" onclick="openDetailPanel(${p.id})">
+                    <td onclick="event.stopPropagation();"><input type="checkbox" class="prospect-checkbox" value="${p.id}"></td>
+                    <td>
+                        <div class="font-medium" title="${escapeHtml(cleanName)}">${escapeHtml(displayName)}</div>
+                        ${p.domain ? `<a href="https://${p.domain}" target="_blank" class="text-xs text-blue-400 hover:underline mono" onclick="event.stopPropagation();">${p.domain}</a>` : ''}
+                        ${p.rating ? `
+                            <div class="business-rating">
+                                <span class="star">&#9733;</span>
+                                <span>${p.rating}</span>
+                                ${p.review_count ? `<span>(${formatReviewCount(p.review_count)})</span>` : ''}
+                            </div>
+                        ` : ''}
+                    </td>
+                    <td class="text-sm" onclick="event.stopPropagation();">
+                        ${p.phone ? `
+                            <div class="mono copyable" style="display: inline-flex; align-items: center; cursor: pointer;" onclick="copyToClipboard('${escapeHtml(p.phone)}', 'Phone')">
+                                ${escapeHtml(p.phone)}
+                                <i data-lucide="copy" class="copy-icon"></i>
+                            </div>
+                        ` : ''}
+                        ${p.emails ? `
+                            <div class="text-zinc-500 text-xs copyable" style="display: inline-flex; align-items: center; cursor: pointer;" onclick="copyToClipboard('${escapeHtml(p.emails.split(',')[0])}', 'Email')">
+                                ${escapeHtml(p.emails.split(',')[0])}
+                                <i data-lucide="copy" class="copy-icon"></i>
+                            </div>
+                        ` : ''}
+                    </td>
+                    <td><span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(p.fit_score)}">${p.fit_score}</span></td>
+                    <td><span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(p.opportunity_score)}">${p.opportunity_score}</span></td>
+                    <td><span class="px-2 py-1 rounded text-xs font-mono font-bold ${scoreClass(p.priority_score)}">${Math.round(p.priority_score)}</span></td>
+                    <td onclick="event.stopPropagation();">
+                        <select class="status-select-styled status-${p.status} status-select" data-id="${p.id}">
+                            <option value="new" ${p.status === 'new' ? 'selected' : ''}>● New</option>
+                            <option value="qualified" ${p.status === 'qualified' ? 'selected' : ''}>★ Qualified</option>
+                            <option value="contacted" ${p.status === 'contacted' ? 'selected' : ''}>✓ Contacted</option>
+                            <option value="meeting" ${p.status === 'meeting' ? 'selected' : ''}>◐ Meeting</option>
+                            <option value="won" ${p.status === 'won' ? 'selected' : ''}>✦ Won</option>
+                            <option value="lost" ${p.status === 'lost' ? 'selected' : ''}>✕ Lost</option>
+                            <option value="skipped" ${p.status === 'skipped' ? 'selected' : ''}>→ Skip</option>
+                        </select>
+                    </td>
+                    <td class="notes-preview text-xs text-zinc-500" title="${escapeHtml(p.opportunity_notes || '')}">${escapeHtml(truncateNotes(p.opportunity_notes, 40))}</td>
+                    <td onclick="event.stopPropagation();">
+                        <div class="flex items-center gap-2">
+                            <button class="p-1 hover:bg-zinc-700 rounded" onclick="openDetailPanel(${p.id})" title="Details">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function scoreClass(score) {
+            if (score >= 60) return 'score-high';
+            if (score >= 40) return 'score-med';
+            return 'score-low';
+        }
+
+        async function updateProspectStatus(id, status) {
+            try {
+                await fetch(`${API}/prospects/${id}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status })
+                });
+                showToast('Status updated', 'success');
+                // Refresh sidebar counts
+                loadDashboardCounts();
+            } catch (e) {
+                showToast('Failed to update', 'error');
+            }
+        }
+
+        async function skipProspect(id) {
+            await fetch(`${API}/prospects/${id}/skip`, { method: 'POST' });
+            loadProspectsPage();
+        }
+
+        async function loadDashboardCounts() {
+            try {
+                // Use the stats endpoint for accurate counts
+                const stats = await fetch(`${API}/prospects/stats`).then(r => r.json());
+
+                document.getElementById('prospect-count').textContent = stats.total || 0;
+                if (stats.status_breakdown) {
+                    document.getElementById('pipeline-new').textContent = stats.status_breakdown.new || 0;
+                    document.getElementById('pipeline-qualified').textContent = stats.status_breakdown.qualified || 0;
+                    document.getElementById('pipeline-contacted').textContent = stats.status_breakdown.contacted || 0;
+                }
+            } catch (e) {
+                console.error('Failed to load dashboard counts:', e);
+            }
+        }
+
+        // ============================================
+        // Detail Panel
+        // ============================================
+        async function openDetailPanel(id) {
+            try {
+                const res = await fetch(`${API}/prospects/${id}`);
+                if (!res.ok) throw new Error('Failed to load prospect');
+
+                const prospect = await res.json();
+                const cleanName = cleanBusinessName(prospect.name);
+
+                document.getElementById('detail-title').textContent = cleanName || 'Prospect Details';
+
+                document.getElementById('detail-content').innerHTML = `
+                    <!-- Header with scores -->
+                    <div class="detail-section">
+                        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                            <span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(prospect.fit_score)}">Fit: ${prospect.fit_score}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(prospect.opportunity_score)}">Opp: ${prospect.opportunity_score}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono font-bold ${scoreClass(prospect.priority_score)}">Priority: ${Math.round(prospect.priority_score)}</span>
+                        </div>
+
+                        ${prospect.domain ? `
+                            <a href="https://${prospect.domain}" target="_blank" class="detail-domain">
+                                ${prospect.domain}
+                                <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                            </a>
+                        ` : ''}
+
+                        ${prospect.rating ? `
+                            <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                                <span style="color: #fbbf24;">&#9733;</span>
+                                <span>${prospect.rating}</span>
+                                ${prospect.review_count ? `<span style="color: var(--text-muted);">(${formatNumber(prospect.review_count)} reviews)</span>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Contact Info with Copy -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Contact Information</div>
+                        ${prospect.phone ? `
+                            <div class="detail-field clickable" onclick="copyToClipboard('${escapeHtml(prospect.phone)}', 'Phone')">
+                                <span class="detail-label">Phone</span>
+                                <span class="detail-value mono">
+                                    ${escapeHtml(prospect.phone)}
+                                    <i data-lucide="copy" class="copy-icon"></i>
+                                </span>
+                            </div>
+                        ` : ''}
+                        ${prospect.emails ? `
+                            <div class="detail-field clickable" onclick="copyToClipboard('${escapeHtml(prospect.emails)}', 'Email')">
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value" style="font-size: 12px;">
+                                    ${escapeHtml(prospect.emails)}
+                                    <i data-lucide="copy" class="copy-icon"></i>
+                                </span>
+                            </div>
+                        ` : ''}
+                        ${prospect.address ? `
+                            <div class="detail-field">
+                                <span class="detail-label">Address</span>
+                                <span class="detail-value">${escapeHtml(prospect.address)}</span>
+                            </div>
+                        ` : ''}
+                        ${!prospect.phone && !prospect.emails && !prospect.address ? '<div class="text-zinc-500 text-sm">No contact info available</div>' : ''}
+                    </div>
+
+                    <!-- Opportunity Notes - FULL TEXT -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Opportunity Notes</div>
+                        <div class="detail-notes">
+                            ${escapeHtml(prospect.opportunity_notes) || 'No automated notes available.'}
+                        </div>
+                    </div>
+
+                    <!-- SERP Presence with icons -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Search Presence</div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${prospect.found_in_ads ? `
+                                <span class="serp-badge serp-ads">
+                                    <i data-lucide="megaphone" style="width: 12px; height: 12px;"></i>
+                                    Google Ads
+                                </span>
+                            ` : ''}
+                            ${prospect.found_in_maps ? `
+                                <span class="serp-badge serp-maps">
+                                    <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                                    Maps ${prospect.maps_position ? '#' + prospect.maps_position : ''}
+                                </span>
+                            ` : ''}
+                            ${prospect.found_in_organic ? `
+                                <span class="serp-badge serp-organic">
+                                    <i data-lucide="search" style="width: 12px; height: 12px;"></i>
+                                    Organic ${prospect.organic_position ? '#' + prospect.organic_position : ''}
+                                </span>
+                            ` : ''}
+                            ${!prospect.found_in_ads && !prospect.found_in_maps && !prospect.found_in_organic ? '<span style="color: var(--text-muted); font-size: 13px;">Not found in SERP results</span>' : ''}
+                        </div>
+                    </div>
+
+                    <!-- Technical Analysis -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Technical Analysis</div>
+                        <div class="tech-field">
+                            <span class="tech-field-label">Website Platform</span>
+                            <span class="tech-field-value">${prospect.cms || 'Unknown'}</span>
+                        </div>
+                        <div class="tech-field">
+                            <span class="tech-field-label">Google Analytics</span>
+                            <span class="tech-field-value ${prospect.has_analytics ? 'text-green' : 'text-red'}">
+                                ${prospect.has_analytics ? '✓ Installed' : '✗ Not detected'}
+                            </span>
+                        </div>
+                        <div class="tech-field">
+                            <span class="tech-field-label">Facebook Pixel</span>
+                            <span class="tech-field-value ${prospect.has_facebook_pixel ? 'text-green' : 'text-red'}">
+                                ${prospect.has_facebook_pixel ? '✓ Installed' : '✗ Not detected'}
+                            </span>
+                        </div>
+                        <div class="tech-field">
+                            <span class="tech-field-label">Online Booking</span>
+                            <span class="tech-field-value ${prospect.has_booking ? 'text-green' : 'text-yellow'}">
+                                ${prospect.has_booking ? '✓ Available' : '✗ Not found'}
+                            </span>
+                        </div>
+                        ${prospect.load_time_ms ? `
+                            <div class="tech-field">
+                                <span class="tech-field-label">Page Load Time</span>
+                                <span class="tech-field-value ${prospect.load_time_ms < 2000 ? 'text-green' : prospect.load_time_ms < 4000 ? 'text-yellow' : 'text-red'}">
+                                    ${(prospect.load_time_ms / 1000).toFixed(1)}s
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Quick Actions</div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn-primary text-sm" onclick="updateProspectStatusAndRefresh(${prospect.id}, 'qualified')">
+                                <i data-lucide="star" style="width: 14px; height: 14px;"></i>
+                                Qualify
+                            </button>
+                            <button class="btn-secondary text-sm" onclick="updateProspectStatusAndRefresh(${prospect.id}, 'contacted')">
+                                <i data-lucide="send" style="width: 14px; height: 14px;"></i>
+                                Mark Contacted
+                            </button>
+                            <button class="btn-secondary text-sm" style="opacity: 0.7;" onclick="updateProspectStatusAndRefresh(${prospect.id}, 'skipped')">
+                                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                                Skip
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- User Notes -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Your Notes</div>
+                        <textarea
+                            id="user-notes-input"
+                            class="input-field"
+                            style="width: 100%; min-height: 100px; resize: vertical;"
+                            placeholder="Add your notes about this prospect..."
+                            onblur="saveUserNotes(${prospect.id}, this.value)"
+                        >${escapeHtml(prospect.user_notes || '')}</textarea>
+                    </div>
+
+                    <!-- Metadata -->
+                    <div class="detail-section" style="opacity: 0.6;">
+                        <div style="font-size: 11px; color: var(--text-muted);">
+                            First seen: ${formatDetailDate(prospect.first_seen_at)}
+                            ${prospect.seen_count > 1 ? ` · Seen ${prospect.seen_count} times` : ''}
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('detail-panel').classList.add('open');
+                lucide.createIcons();
+
+            } catch (e) {
+                showToast('Failed to load prospect details', 'error');
+                console.error(e);
+            }
+        }
+
+        function closeDetailPanel() {
+            document.getElementById('detail-panel').classList.remove('open');
+        }
+
+        async function saveUserNotes(id, notes) {
+            try {
+                await fetch(`${API}/prospects/${id}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_notes: notes })
+                });
+                // Silent save - no toast needed
+            } catch (e) {
+                showToast('Failed to save notes', 'error');
+            }
+        }
+
+        async function updateProspectStatusAndRefresh(id, status) {
+            await updateProspectStatus(id, status);
+            closeDetailPanel();
+            loadProspectsPage();
+        }
+
+        // ============================================
+        // Campaigns Page
+        // ============================================
+        async function loadCampaignsPage() {
+            document.getElementById('page-title').textContent = 'Campaigns';
+
+            try {
+                const campaigns = await fetch(`${API}/campaigns`).then(r => r.json());
+
+                document.getElementById('page-content').innerHTML = `
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-semibold">Saved Campaigns</h2>
+                        <button class="btn-primary" onclick="showCreateCampaignModal()">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            New Campaign
+                        </button>
+                    </div>
+
+                    ${campaigns.length > 0 ? `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${campaigns.map(c => `
+                                <div class="card">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div>
+                                            <div class="font-semibold">${escapeHtml(c.name)}</div>
+                                            <div class="text-sm text-zinc-500">${escapeHtml(c.business_type)}</div>
+                                            <div class="text-sm text-zinc-500">${escapeHtml(c.location)}</div>
+                                        </div>
+                                        <button class="btn-secondary text-sm" onclick="runCampaign(${c.id})">
+                                            <i data-lucide="play" class="w-4 h-4"></i>
+                                            Run
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs text-zinc-500">
+                                        <span>${c.run_count} runs</span>
+                                        <span>${c.last_run_at ? formatDate(c.last_run_at) : 'Never run'}</span>
+                                    </div>
+                                    <div class="flex gap-2 mt-3 pt-3 border-t border-zinc-800">
+                                        <button class="text-xs text-zinc-400 hover:text-white" onclick="deleteCampaign(${c.id})">Delete</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="text-center py-12 text-zinc-500">
+                            <p>No campaigns yet.</p>
+                            <p class="text-sm mt-2">Save a search as a campaign to run it again later.</p>
+                        </div>
+                    `}
+                `;
+
+                lucide.createIcons();
+
+            } catch (e) {
+                document.getElementById('page-content').innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-red-400 mb-2">Failed to load campaigns</div>
+                        <div class="text-sm text-zinc-500">${e.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadCampaigns() {
+            try {
+                const campaigns = await fetch(`${API}/campaigns`).then(r => r.json());
+
+                const container = document.getElementById('campaign-list');
+                container.innerHTML = campaigns.slice(0, 5).map(c => `
+                    <div class="sidebar-item" onclick="runCampaign(${c.id})">
+                        <i data-lucide="folder" class="w-4 h-4 text-${c.color}-400"></i>
+                        <span class="truncate text-sm">${escapeHtml(c.name)}</span>
+                    </div>
+                `).join('');
+
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Failed to load campaigns', e);
+            }
+        }
+
+        async function runCampaign(id) {
+            showToast('Running campaign...', 'info');
+            try {
+                const res = await fetch(`${API}/campaigns/${id}/run`, { method: 'POST' });
+                const data = await res.json();
+
+                // Navigate to search and show progress
+                navigateTo('search');
+
+                setTimeout(() => {
+                    document.getElementById('search-progress')?.classList.remove('hidden');
+                    const submitBtn = document.getElementById('search-submit-btn');
+                    if (submitBtn) submitBtn.disabled = true;
+
+                    connectSearchWebSocket(data.job_id);
+                }, 100);
+
+            } catch (e) {
+                showToast('Failed to run campaign', 'error');
+            }
+        }
+
+        async function deleteCampaign(id) {
+            if (!confirm('Delete this campaign?')) return;
+
+            try {
+                await fetch(`${API}/campaigns/${id}`, { method: 'DELETE' });
+                showToast('Campaign deleted', 'success');
+                loadCampaignsPage();
+                loadCampaigns();
+            } catch (e) {
+                showToast('Failed to delete campaign', 'error');
+            }
+        }
+
+        function showSaveCampaignModal() {
+            const form = document.getElementById('search-form');
+            const business_type = form.business_type.value;
+            const location = form.location.value;
+            const limit = form.limit.value;
+
+            if (!business_type || !location) {
+                showToast('Fill in business type and location first', 'error');
+                return;
+            }
+
+            const name = prompt('Campaign name:', `${business_type} in ${location}`);
+            if (!name) return;
+
+            saveCampaign(name, business_type, location, parseInt(limit) || 20);
+        }
+
+        async function saveCampaign(name, business_type, location, limit) {
+            try {
+                await fetch(`${API}/campaigns`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name, business_type, location, limit })
+                });
+                showToast('Campaign saved!', 'success');
+                loadCampaigns();
+            } catch (e) {
+                showToast('Failed to save campaign', 'error');
+            }
+        }
+
+        function showCreateCampaignModal() {
+            const name = prompt('Campaign name:');
+            if (!name) return;
+
+            const business_type = prompt('Business type (e.g., plumber):');
+            if (!business_type) return;
+
+            const location = prompt('Location (e.g., Sydney, NSW):');
+            if (!location) return;
+
+            saveCampaign(name, business_type, location, 20);
+        }
+
+        // ============================================
+        // Command Palette
+        // ============================================
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Cmd+K or Ctrl+K - Command palette
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    openCommandPalette();
+                }
+
+                // Escape - Close palette or detail panel
+                if (e.key === 'Escape') {
+                    closeCommandPalette();
+                    closeDetailPanel();
+                }
+
+                // / - Focus search
+                if (e.key === '/' && !e.target.matches('input, textarea')) {
+                    e.preventDefault();
+                    document.getElementById('prospect-search')?.focus();
+                }
+            });
+        }
+
+        function openCommandPalette() {
+            document.getElementById('cmd-palette').classList.remove('hidden');
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('cmd-input').focus();
+
+            renderCommandResults();
+
+            document.getElementById('cmd-input').addEventListener('input', (e) => {
+                renderCommandResults(e.target.value);
+            });
+        }
+
+        function closeCommandPalette() {
+            document.getElementById('cmd-palette').classList.add('hidden');
+            document.getElementById('overlay').classList.add('hidden');
+            document.getElementById('cmd-input').value = '';
+        }
+
+        function renderCommandResults(query = '') {
+            const commands = [
+                { icon: 'search', label: 'New Search', shortcut: 'S', action: "navigateTo('search')" },
+                { icon: 'users', label: 'View Prospects', shortcut: 'P', action: "navigateTo('prospects')" },
+                { icon: 'layout-dashboard', label: 'Dashboard', shortcut: 'D', action: "navigateTo('dashboard')" },
+                { icon: 'folder', label: 'Campaigns', shortcut: 'C', action: "navigateTo('campaigns')" },
+                { icon: 'download', label: 'Export CSV', action: "exportProspects('csv')" },
+            ];
+
+            const filtered = query
+                ? commands.filter(c => c.label.toLowerCase().includes(query.toLowerCase()))
+                : commands;
+
+            document.getElementById('cmd-results').innerHTML = filtered.map(c => `
+                <div class="dropdown-item" onclick="${c.action}; closeCommandPalette();">
+                    <i data-lucide="${c.icon}" class="w-4 h-4"></i>
+                    <span>${c.label}</span>
+                    ${c.shortcut ? `<kbd class="ml-auto">${c.shortcut}</kbd>` : ''}
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // ============================================
+        // Export
+        // ============================================
+        async function exportProspects(format) {
+            try {
+                // Get latest job ID
+                const jobs = await fetch(`${API}/jobs?limit=1`).then(r => r.json());
+                if (jobs.length > 0) {
+                    window.open(`${API}/jobs/${jobs[0].id}/results?format=${format}`, '_blank');
+                } else {
+                    showToast('No search results to export', 'error');
+                }
+            } catch (e) {
+                showToast('Export failed', 'error');
+            }
+        }
+
+        // ============================================
+        // Utilities
+        // ============================================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'border-red-500' : type === 'success' ? 'border-green-500' : 'border-zinc-700'}`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="${type === 'error' ? 'alert-circle' : type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4 ${type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            return date.toLocaleDateString();
+        }
+
+        function formatDetailDate(isoString) {
+            if (!isoString) return 'Unknown';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('en-AU', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function debounce(fn, ms) {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => fn(...args), ms);
+            };
+        }
+    </script>
 </body>
 </html>

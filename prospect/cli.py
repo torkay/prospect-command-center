@@ -316,8 +316,8 @@ def search(
             }
             raw_path.write_text(json.dumps(raw_data, indent=2))
 
-        # Deduplicate
-        prospects = deduplicate_serp_results(serp_results)
+        # Deduplicate (pass location for phone validation)
+        prospects = deduplicate_serp_results(serp_results, location=location)
 
         # Filter by excluded domains
         if exclude_domain:
@@ -394,9 +394,9 @@ def search(
                 f"{len(serp_results.maps)} maps, {len(serp_results.organic)} organic"
             )
 
-            # Step 2: Deduplicate
+            # Step 2: Deduplicate (pass location for phone validation)
             dedup_task = progress.add_task("[cyan]Deduplicating...", total=1)
-            prospects = deduplicate_serp_results(serp_results)
+            prospects = deduplicate_serp_results(serp_results, location=location)
             progress.update(dedup_task, completed=1)
 
             # Filter by excluded domains
@@ -563,7 +563,7 @@ def batch(queries_file: str, output_dir: str, output_format: str, skip_enrichmen
             with SerpAPIClient() as client:
                 serp_results = client.search(business_type, location, num_results=20)
 
-            prospects = deduplicate_serp_results(serp_results)
+            prospects = deduplicate_serp_results(serp_results, location=location)
 
             # Enrich
             if not skip_enrichment and prospects:

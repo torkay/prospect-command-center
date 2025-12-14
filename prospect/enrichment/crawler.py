@@ -14,6 +14,8 @@ from ..config import ScraperConfig
 from ..models import CrawlResult, WebsiteSignals, Prospect
 from .contacts import extract_emails, extract_phones
 from .technology import detect_cms, detect_tracking, detect_booking_system
+from ..validation import filter_emails_for_domain
+from ..dedup import normalize_domain
 
 logger = logging.getLogger(__name__)
 
@@ -119,8 +121,22 @@ class WebsiteCrawler:
         signals = await self.analyze_website(prospect.website)
         prospect.signals = signals
 
-        # Merge contact info
-        for email in signals.emails:
+        # Filter emails to only include those matching the business domain
+        # This prevents cross-contamination (e.g., billy@bkc.media on fallonsolutions.com.au)
+        business_domain = prospect.domain or normalize_domain(prospect.website)
+        if business_domain:
+            valid_emails = filter_emails_for_domain(signals.emails, business_domain)
+            logger.debug(
+                "Filtered %d -> %d emails for domain %s",
+                len(signals.emails),
+                len(valid_emails),
+                business_domain,
+            )
+        else:
+            valid_emails = signals.emails
+
+        # Merge validated contact info
+        for email in valid_emails:
             if email not in prospect.emails:
                 prospect.emails.append(email)
 

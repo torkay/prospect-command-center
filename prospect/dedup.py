@@ -7,6 +7,11 @@ from urllib.parse import urlparse
 
 from .config import DIRECTORY_DOMAINS, DIRECTORY_URL_PATTERNS
 from .models import Prospect, SerpResults, AdResult, MapsResult, OrganicResult
+from .validation import (
+    clean_business_name,
+    validate_phone_for_location,
+    filter_emails_for_domain,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -125,9 +130,13 @@ def is_directory_url(url: str, domain: str) -> bool:
 
     domain_lower = domain.lower()
 
-    # Check domain against blocklist
-    if any(dir_domain in domain_lower for dir_domain in DIRECTORY_DOMAINS):
-        return True
+    # Check domain against blocklist using proper domain matching
+    # Must be exact match OR end with .directory_domain (for subdomains)
+    for dir_domain in DIRECTORY_DOMAINS:
+        if domain_lower == dir_domain:
+            return True
+        if domain_lower.endswith('.' + dir_domain):
+            return True
 
     # Check URL patterns (e.g., /r/ for Reddit, even if domain isn't blocked)
     if url:
@@ -261,7 +270,7 @@ def merge_prospects(prospects: list[Prospect]) -> list[Prospect]:
     return result
 
 
-def deduplicate_serp_results(serp_results: SerpResults) -> list[Prospect]:
+def deduplicate_serp_results(serp_results: SerpResults, location: str = "") -> list[Prospect]:
     """
     Convert SERP results to deduplicated prospect list.
 
@@ -270,6 +279,7 @@ def deduplicate_serp_results(serp_results: SerpResults) -> list[Prospect]:
 
     Args:
         serp_results: Raw SERP results containing ads, maps, and organic
+        location: Search location for phone number validation
 
     Returns:
         Deduplicated list of Prospect objects
@@ -287,11 +297,22 @@ def deduplicate_serp_results(serp_results: SerpResults) -> list[Prospect]:
             continue
 
         if domain:
+            # Clean business name
+            cleaned_name = clean_business_name(maps_result.name)
+
+            # Validate phone for location
+            phone = maps_result.phone
+            if phone and location:
+                is_valid, reason = validate_phone_for_location(phone, location)
+                if not is_valid:
+                    logger.debug("Filtering phone %s: %s", phone, reason)
+                    phone = None
+
             prospects_by_domain[domain] = Prospect(
-                name=maps_result.name,
+                name=cleaned_name,
                 website=maps_result.website,
                 domain=domain,
-                phone=maps_result.phone,
+                phone=phone,
                 address=maps_result.address,
                 rating=maps_result.rating,
                 review_count=maps_result.review_count,
@@ -316,9 +337,12 @@ def deduplicate_serp_results(serp_results: SerpResults) -> list[Prospect]:
                 prospects_by_domain[domain].found_in_ads = True
                 prospects_by_domain[domain].ad_position = ad.position
             else:
+                # Clean business name
+                cleaned_name = clean_business_name(ad.headline)
+
                 # New prospect from ad (NO phone/address - ads don't have this)
                 prospects_by_domain[domain] = Prospect(
-                    name=ad.headline,
+                    name=cleaned_name,
                     website=ad.destination_url,
                     domain=domain,
                     phone=None,
@@ -348,9 +372,12 @@ def deduplicate_serp_results(serp_results: SerpResults) -> list[Prospect]:
             prospects_by_domain[domain].found_in_organic = True
             prospects_by_domain[domain].organic_position = organic.position
         else:
+            # Clean business name
+            cleaned_name = clean_business_name(organic.title)
+
             # New prospect from organic (NO phone/address - organic doesn't have this)
             prospects_by_domain[domain] = Prospect(
-                name=organic.title,
+                name=cleaned_name,
                 website=organic.url,
                 domain=domain,
                 phone=None,  # DO NOT set - organic results don't have phone

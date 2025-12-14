@@ -226,8 +226,8 @@ async def run_search_job(job_id: str):
             )
             return
 
-        # Deduplicate
-        prospects = deduplicate_serp_results(serp_results)
+        # Deduplicate (pass location for phone validation)
+        prospects = deduplicate_serp_results(serp_results, location=job.location)
 
         await job_manager.update_job(
             job_id,

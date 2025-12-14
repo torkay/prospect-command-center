@@ -156,6 +156,7 @@ DIRECTORY_DOMAINS = {
     "reddit.com",
     "quora.com",
     "pinterest.com",
+    "threads.net",
 
     # Australian directories
     "yelp.com",
@@ -175,26 +176,65 @@ DIRECTORY_DOMAINS = {
     "fyple.com.au",
     "brownbook.net",
     "wordofmouth.com.au",
+    "findabusiness.com.au",
+    "cylex.com.au",
+    "opendi.com.au",
+    "tuugo.com.au",
+    "yalwa.com.au",
+
+    # Marketplaces - look like real businesses but are aggregators
+    "airtasker.com",
+    "airtasker.com.au",
+    "serviceseeking.com.au",
+    "bark.com",
+    "bark.com.au",
+    "thumbtack.com",
+    "homeadvisor.com",
+    "angi.com",
+    "angieslist.com",
+    "taskrabbit.com",
+    "fiverr.com",
+    "upwork.com",
+    "freelancer.com",
+    "freelancer.com.au",
 
     # Job boards
     "seek.com.au",
     "indeed.com",
     "indeed.com.au",
+    "au.indeed.com",
     "glassdoor.com",
     "glassdoor.com.au",
     "jora.com",
+    "careerone.com.au",
+
+    # Review aggregators
+    "birdeye.com",
+    "trustpilot.com",
+    "reviews.io",
+    "podium.com",
 
     # Generic/tech
     "wikipedia.org",
     "google.com",
+    "bing.com",
+    "duckduckgo.com",
     "apple.com",
-    "trustpilot.com",
     "g2.com",
     "capterra.com",
     "crunchbase.com",
     "medium.com",
     "github.com",
     "stackoverflow.com",
+
+    # News/media (not businesses)
+    "news.com.au",
+    "smh.com.au",
+    "theaustralian.com.au",
+    "abc.net.au",
+    "9news.com.au",
+    "7news.com.au",
+    "sbs.com.au",
 }
 
 # URL patterns that indicate directory/social content (even on legitimate domains)
@@ -209,6 +249,15 @@ DIRECTORY_URL_PATTERNS = [
     "/user/",           # User profiles
     "/comments/",       # Reddit comments
     "/questions/",      # Q&A sites
+    "/listing/",        # Directory listings
+    "/directory/",      # Directory pages
+    "/find-a-",         # Find-a-tradesman style
+    "/search?",         # Search results pages
+    "/review/",         # Review pages
+    "/reviews/",        # Review pages
+    "/category/",       # Category listings
+    "/service-provider/",  # Service provider directories
+    "/tradies/",        # Tradie directories
 ]
 
 # CMS signatures for detection

@@ -188,6 +188,58 @@ docker-compose -f docker/docker-compose.yml up
 docker-compose -f docker/docker-compose.beta.yml up
 ```
 
+## Deploy to Railway
+
+One-click deployment to Railway (free tier):
+
+### Quick Deploy
+
+1. **Fork this repository** on GitHub
+
+2. **Go to [railway.app](https://railway.app)** and sign in with GitHub
+
+3. **Create new project** → "Deploy from GitHub repo" → Select your fork
+
+4. **Add environment variable**:
+   - `SERPAPI_KEY` = your SerpAPI key
+
+5. **Generate domain**: Settings → Networking → Generate Domain
+
+6. **Your app is live!** at `https://your-app.up.railway.app`
+
+### What Gets Deployed
+
+| Component | Details |
+|-----------|---------|
+| **Web Server** | FastAPI with Uvicorn |
+| **Database** | SQLite with persistent volume at `/data` |
+| **Health Check** | `/api/v1/health` |
+| **Frontend** | Single-page app at `/` |
+
+### Cost (Free Tier)
+
+Railway's free tier includes $5/month credit:
+
+| Resource | Usage | Monthly Cost |
+|----------|-------|--------------|
+| Compute | ~3 hours/month | ~$0.00 |
+| Memory | ~256MB | Included |
+| Storage | ~50MB SQLite | Included |
+| **Total** | | **$0.00** |
+
+### Verify Deployment
+
+```bash
+# Health check
+curl https://your-app.up.railway.app/api/v1/health
+
+# Expected: {"status":"healthy","serpapi":true,"sheets":false,...}
+```
+
+### Persistent Data
+
+The SQLite database is stored on a persistent volume that survives restarts and redeploys. Your campaigns, prospects, and search history are preserved.
+
 ## Development
 
 ```bash

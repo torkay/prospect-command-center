@@ -115,8 +115,8 @@ def search_prospects(
     except Exception as e:
         raise RuntimeError(f"Search failed: {e}") from e
 
-    # Deduplicate
-    prospects = deduplicate_serp_results(serp_results)
+    # Deduplicate (pass location for phone validation)
+    prospects = deduplicate_serp_results(serp_results, location=location)
 
     if not prospects:
         return []
