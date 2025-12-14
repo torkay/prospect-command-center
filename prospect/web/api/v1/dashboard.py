@@ -157,6 +157,9 @@ def get_insights(db: Session = Depends(get_db)):
     """
     Generate actionable insights with proper grammar.
 
+    Actions include filter information so the frontend can determine
+    if the action is useful (applies filters vs. goes to same page).
+
     Examples:
     - "5 high-priority prospects need attention"
     - "1 prospect needs attention"
@@ -181,8 +184,9 @@ def get_insights(db: Session = Depends(get_db)):
             "icon": "alert-circle",
             "title": f"{high_priority_new} high-priority {prospect_word} {needs_word} attention",
             "description": f"{this_word} priority scores above 60 but haven't been contacted.",
-            "action": "View prospects",
+            "action": "View high-priority",
             "action_url": "/prospects?status=new&min_priority=60",
+            "action_filters": {"status": "new", "min_priority": "60"},
         })
 
     # Follow-ups due
@@ -201,6 +205,7 @@ def get_insights(db: Session = Depends(get_db)):
             "description": "Prospects you scheduled to follow up with.",
             "action": "View follow-ups",
             "action_url": "/prospects?has_follow_up=true",
+            "action_filters": {"has_follow_up": "true"},
         })
 
     # Prospects without email but high fit
@@ -251,6 +256,7 @@ def get_insights(db: Session = Depends(get_db)):
             "description": f"You've qualified {you_word} but haven't reached out yet.",
             "action": "View qualified",
             "action_url": "/prospects?status=qualified",
+            "action_filters": {"status": "qualified"},
         })
 
     return insights

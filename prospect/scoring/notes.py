@@ -24,7 +24,7 @@ def generate_opportunity_notes(prospect: Prospect) -> str:
 
     signals = prospect.signals
     if not signals or not signals.reachable:
-        notes.append("Website unreachable or blocked analysis")
+        notes.append("Website was unreachable during analysis; technical details unknown")
         return "; ".join(notes)
 
     # Categorize opportunities by type
@@ -42,14 +42,14 @@ def generate_opportunity_notes(prospect: Prospect) -> str:
     if prospect.found_in_maps and prospect.maps_position and prospect.maps_position > 1:
         seo_opportunities.append(f"#{prospect.maps_position} in local pack (not #1)")
 
-    # Tracking opportunities
-    if not signals.has_google_analytics:
+    # Tracking opportunities - only if confirmed absent, not unknown
+    if signals.has_google_analytics is False:
         tracking_opportunities.append("no Google Analytics")
-    if not signals.has_facebook_pixel:
+    if signals.has_facebook_pixel is False:
         tracking_opportunities.append("no Facebook Pixel")
 
-    # Conversion opportunities
-    if not signals.has_booking_system:
+    # Conversion opportunities - only if confirmed absent
+    if signals.has_booking_system is False:
         conversion_opportunities.append("no online booking")
     if not signals.emails:
         conversion_opportunities.append("no visible contact email")
@@ -81,7 +81,7 @@ def generate_opportunity_notes(prospect: Prospect) -> str:
     strengths = []
     if prospect.found_in_ads:
         strengths.append("already running ads")
-    if signals.has_google_analytics and signals.has_facebook_pixel:
+    if signals.has_google_analytics is True and signals.has_facebook_pixel is True:
         strengths.append("has good tracking setup")
     if prospect.rating and prospect.rating >= 4.5:
         strengths.append(f"excellent reviews ({prospect.rating}★)")
@@ -110,16 +110,16 @@ def generate_outreach_angle(prospect: Prospect) -> str:
 
     signals = prospect.signals
     if not signals or not signals.reachable:
-        return "Website may have issues - offer technical audit"
+        return "Website may have technical issues - offer a website audit"
 
     # Determine primary angle based on biggest opportunity
     if not prospect.found_in_organic and not prospect.found_in_maps:
         return "Help them get found online - currently invisible in search"
 
-    if not signals.has_google_analytics and not signals.has_facebook_pixel:
-        return "Help them understand their website traffic and customer behavior"
+    if signals.has_google_analytics is False and signals.has_facebook_pixel is False:
+        return "Help them understand their website traffic and customer behaviour"
 
-    if not signals.has_booking_system:
+    if signals.has_booking_system is False:
         return "Streamline their booking process with online scheduling"
 
     if prospect.found_in_maps and prospect.maps_position and prospect.maps_position > 1:
@@ -168,14 +168,14 @@ def get_priority_services(prospect: Prospect) -> list[str]:
     if not prospect.found_in_ads:
         services.append("Google Ads")
 
-    # Tracking setup
-    if not signals.has_google_analytics:
+    # Tracking setup - only if confirmed absent
+    if signals.has_google_analytics is False:
         services.append("Analytics Setup")
-    if not signals.has_facebook_pixel:
+    if signals.has_facebook_pixel is False:
         services.append("Facebook Ads / Retargeting")
 
-    # Conversion optimization
-    if not signals.has_booking_system:
+    # Conversion optimisation - only if confirmed absent
+    if signals.has_booking_system is False:
         services.append("Booking System")
 
     # Website improvements

@@ -534,35 +534,41 @@
                 <span class="ml-auto text-xs bg-zinc-700 px-2 py-0.5 rounded" id="prospect-count">0</span>
             </div>
 
-            <div class="px-4 mt-6 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Campaigns</div>
+            <!-- Campaigns section - hide if empty -->
+            <div id="campaigns-section">
+                <div class="px-4 mt-6 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Campaigns</div>
 
-            <div class="sidebar-item" data-page="campaigns">
-                <i data-lucide="folder" class="w-4 h-4"></i>
-                All Campaigns
+                <div class="sidebar-item" data-page="campaigns">
+                    <i data-lucide="folder" class="w-4 h-4"></i>
+                    All Campaigns
+                </div>
+
+                <div id="campaign-list" class="mt-2">
+                    <!-- Dynamic campaign list -->
+                </div>
             </div>
 
-            <div id="campaign-list" class="mt-2">
-                <!-- Dynamic campaign list -->
-            </div>
+            <!-- Pipeline section - hide if no prospects -->
+            <div id="pipeline-section" style="display: none;">
+                <div class="px-4 mt-6 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Pipeline</div>
 
-            <div class="px-4 mt-6 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Pipeline</div>
+                <div class="sidebar-item" data-page="prospects" data-filter="status=new">
+                    <i data-lucide="inbox" class="w-4 h-4"></i>
+                    New
+                    <span class="ml-auto text-xs" id="pipeline-new">0</span>
+                </div>
 
-            <div class="sidebar-item" data-page="prospects" data-filter="status=new">
-                <i data-lucide="inbox" class="w-4 h-4"></i>
-                New
-                <span class="ml-auto text-xs" id="pipeline-new">0</span>
-            </div>
+                <div class="sidebar-item" data-page="prospects" data-filter="status=qualified">
+                    <i data-lucide="star" class="w-4 h-4"></i>
+                    Qualified
+                    <span class="ml-auto text-xs" id="pipeline-qualified">0</span>
+                </div>
 
-            <div class="sidebar-item" data-page="prospects" data-filter="status=qualified">
-                <i data-lucide="star" class="w-4 h-4"></i>
-                Qualified
-                <span class="ml-auto text-xs" id="pipeline-qualified">0</span>
-            </div>
-
-            <div class="sidebar-item" data-page="prospects" data-filter="status=contacted">
-                <i data-lucide="send" class="w-4 h-4"></i>
-                Contacted
-                <span class="ml-auto text-xs" id="pipeline-contacted">0</span>
+                <div class="sidebar-item" data-page="prospects" data-filter="status=contacted">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    Contacted
+                    <span class="ml-auto text-xs" id="pipeline-contacted">0</span>
+                </div>
             </div>
         </nav>
 
@@ -653,6 +659,25 @@
         let currentFilters = {};
         let selectedProspects = new Set();
         let currentJobId = null;
+
+        // British/Australian English strings
+        const STRINGS = {
+            // Actions
+            analyse: 'Analyse',
+            analysing: 'Analysing...',
+            analysed: 'Analysed',
+            // Progress
+            searchingFor: 'Searching for',
+            findingProspects: 'Finding prospects',
+            enrichingWebsites: 'Enriching websites',
+            analysisComplete: 'Analysis complete',
+            // Notes
+            unreachableNote: 'Website was unreachable during analysis; technical details unknown.',
+            // Insights - proper grammar helpers
+            prospectNeed: (count) => count === 1 ? 'prospect needs' : 'prospects need',
+            prospectIs: (count) => count === 1 ? 'prospect is' : 'prospects are',
+            thisProspect: (count) => count === 1 ? 'This prospect has' : 'These prospects have',
+        };
 
         // ============================================
         // Initialize
@@ -748,6 +773,15 @@
             return params;
         }
 
+        function navigateToInsight(url) {
+            // Parse the insight URL and navigate with filters
+            // e.g., "/prospects?status=new&min_priority=60"
+            const urlObj = new URL(url, window.location.origin);
+            const page = urlObj.pathname.replace('/', '') || 'prospects';
+            const filter = urlObj.search.replace('?', '');
+            navigateTo(page, filter);
+        }
+
         // ============================================
         // Dashboard
         // ============================================
@@ -798,13 +832,13 @@
                                 ${insights.map(i => `
                                     <div class="card flex items-start gap-4">
                                         <div class="w-8 h-8 rounded-lg ${i.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'} flex items-center justify-center flex-shrink-0">
-                                            <i data-lucide="${i.type === 'action' ? 'alert-circle' : 'lightbulb'}" class="w-4 h-4"></i>
+                                            <i data-lucide="${i.icon || (i.type === 'action' ? 'alert-circle' : 'lightbulb')}" class="w-4 h-4"></i>
                                         </div>
                                         <div class="flex-1">
                                             <div class="font-medium">${i.title}</div>
                                             <div class="text-sm text-zinc-500 mt-1">${i.description}</div>
                                         </div>
-                                        ${i.action ? `<button class="btn-secondary text-sm">${i.action}</button>` : ''}
+                                        ${i.action && i.action_url ? `<button class="btn-secondary text-sm" onclick="navigateToInsight('${i.action_url}')">${i.action}</button>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -920,7 +954,7 @@
                             <div class="flex items-center gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" name="skip_enrichment" class="rounded">
-                                    <span class="text-sm">Fast mode (skip website analysis)</span>
+                                    <span class="text-sm">Fast mode (skip website enrichment)</span>
                                 </label>
                             </div>
 
@@ -944,7 +978,7 @@
                                 <i data-lucide="loader-2" class="w-4 h-4 text-green-400 animate-spin"></i>
                             </div>
                             <div>
-                                <div id="progress-title" class="font-medium">Searching...</div>
+                                <div id="progress-title" class="font-medium">Analysing...</div>
                                 <div id="progress-subtitle" class="text-sm text-zinc-500">Finding prospects</div>
                             </div>
                         </div>
@@ -1381,12 +1415,19 @@
             try {
                 // Use the stats endpoint for accurate counts
                 const stats = await fetch(`${API}/prospects/stats`).then(r => r.json());
+                const hasProspects = (stats.total || 0) > 0;
 
                 document.getElementById('prospect-count').textContent = stats.total || 0;
                 if (stats.status_breakdown) {
                     document.getElementById('pipeline-new').textContent = stats.status_breakdown.new || 0;
                     document.getElementById('pipeline-qualified').textContent = stats.status_breakdown.qualified || 0;
                     document.getElementById('pipeline-contacted').textContent = stats.status_breakdown.contacted || 0;
+                }
+
+                // Show/hide Pipeline section based on prospect count
+                const pipelineSection = document.getElementById('pipeline-section');
+                if (pipelineSection) {
+                    pipelineSection.style.display = hasProspects ? 'block' : 'none';
                 }
             } catch (e) {
                 console.error('Failed to load dashboard counts:', e);
@@ -1805,14 +1846,48 @@
             document.getElementById('cmd-input').value = '';
         }
 
+        function getContextualCommands() {
+            // Build commands based on current context
+            const commands = [];
+            const prospectCount = parseInt(document.getElementById('prospect-count')?.textContent || '0');
+            const hasProspects = prospectCount > 0;
+
+            // Always available
+            if (currentPage !== 'search') {
+                commands.push({ icon: 'search', label: 'New Search', shortcut: 'S', action: "navigateTo('search')" });
+            }
+            if (currentPage !== 'dashboard') {
+                commands.push({ icon: 'layout-dashboard', label: 'Dashboard', shortcut: 'D', action: "navigateTo('dashboard')" });
+            }
+
+            // Only show if there are prospects
+            if (hasProspects) {
+                if (currentPage !== 'prospects' || Object.keys(currentFilters).length > 0) {
+                    commands.push({ icon: 'users', label: 'All Prospects', shortcut: 'P', action: "navigateTo('prospects')" });
+                }
+                commands.push({ icon: 'download', label: 'Export to CSV', action: "exportProspects('csv')" });
+            }
+
+            // Campaigns
+            if (currentPage !== 'campaigns') {
+                commands.push({ icon: 'folder', label: 'Campaigns', shortcut: 'C', action: "navigateTo('campaigns')" });
+            }
+
+            // Context-specific actions
+            if (currentPage === 'prospects' && hasProspects) {
+                if (currentFilters.status !== 'new') {
+                    commands.push({ icon: 'inbox', label: 'View New Prospects', action: "navigateTo('prospects', 'status=new')" });
+                }
+                if (currentFilters.status !== 'qualified') {
+                    commands.push({ icon: 'star', label: 'View Qualified', action: "navigateTo('prospects', 'status=qualified')" });
+                }
+            }
+
+            return commands;
+        }
+
         function renderCommandResults(query = '') {
-            const commands = [
-                { icon: 'search', label: 'New Search', shortcut: 'S', action: "navigateTo('search')" },
-                { icon: 'users', label: 'View Prospects', shortcut: 'P', action: "navigateTo('prospects')" },
-                { icon: 'layout-dashboard', label: 'Dashboard', shortcut: 'D', action: "navigateTo('dashboard')" },
-                { icon: 'folder', label: 'Campaigns', shortcut: 'C', action: "navigateTo('campaigns')" },
-                { icon: 'download', label: 'Export CSV', action: "exportProspects('csv')" },
-            ];
+            const commands = getContextualCommands();
 
             const filtered = query
                 ? commands.filter(c => c.label.toLowerCase().includes(query.toLowerCase()))

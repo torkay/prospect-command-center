@@ -56,17 +56,25 @@ class SerpResults:
 
 @dataclass
 class WebsiteSignals:
-    """Marketing signals extracted from a website."""
+    """
+    Marketing signals extracted from a website.
+
+    IMPORTANT: None means "unknown", not "missing".
+    - None = couldn't determine (timeout, blocked, etc.)
+    - True = confirmed present
+    - False = confirmed absent
+    """
 
     url: str
     reachable: bool = False
     emails: list[str] = field(default_factory=list)
     phones: list[str] = field(default_factory=list)
     cms: Optional[str] = None
-    has_google_analytics: bool = False
-    has_facebook_pixel: bool = False
-    has_google_ads: bool = False
-    has_booking_system: bool = False
+    # Tracking - None = unknown, True = present, False = absent
+    has_google_analytics: Optional[bool] = None
+    has_facebook_pixel: Optional[bool] = None
+    has_google_ads: Optional[bool] = None
+    has_booking_system: Optional[bool] = None
     load_time_ms: Optional[int] = None
     title: Optional[str] = None
     meta_description: Optional[str] = None

@@ -31,19 +31,19 @@ def calculate_opportunity_score(
 
     signals = prospect.signals
     if not signals:
-        # Can't analyze, assume moderate opportunity
+        # Can't analyse, assume moderate opportunity
         return 50
 
-    # Missing Google Analytics (15 points)
-    if not signals.has_google_analytics:
+    # Missing Google Analytics (15 points) - only if confirmed absent
+    if signals.has_google_analytics is False:
         score += config.no_analytics_weight
 
-    # Missing Facebook Pixel (10 points)
-    if not signals.has_facebook_pixel:
+    # Missing Facebook Pixel (10 points) - only if confirmed absent
+    if signals.has_facebook_pixel is False:
         score += config.no_pixel_weight
 
-    # No booking system (15 points)
-    if not signals.has_booking_system:
+    # No booking system (15 points) - only if confirmed absent
+    if signals.has_booking_system is False:
         score += config.no_booking_weight
 
     # No contact emails on site (10 points)
@@ -65,8 +65,8 @@ def calculate_opportunity_score(
     if prospect.found_in_ads:
         score += config.running_ads_penalty  # Negative value
 
-    # Has both GA and FB pixel (sophisticated)
-    if signals.has_google_analytics and signals.has_facebook_pixel:
+    # Has both GA and FB pixel (sophisticated) - only if confirmed present
+    if signals.has_google_analytics is True and signals.has_facebook_pixel is True:
         score += config.good_tracking_penalty  # Negative value
 
     # BONUSES for poor search visibility
@@ -114,15 +114,15 @@ def get_opportunity_breakdown(prospect: Prospect) -> dict:
     signals = prospect.signals
     if not signals:
         breakdown["opportunities"].append({
-            "factor": "Unable to analyze website",
+            "factor": "Unable to analyse website",
             "points": 50,
-            "note": "Website may be unreachable or blocking analysis",
+            "note": "Website was unreachable during analysis; technical details unknown",
         })
         breakdown["total"] = 50
         return breakdown
 
-    # Opportunities (positive points)
-    if not signals.has_google_analytics:
+    # Opportunities (positive points) - only if confirmed absent, not unknown
+    if signals.has_google_analytics is False:
         breakdown["opportunities"].append({
             "factor": "No Google Analytics",
             "points": config.no_analytics_weight,
@@ -130,7 +130,7 @@ def get_opportunity_breakdown(prospect: Prospect) -> dict:
         })
         breakdown["total"] += config.no_analytics_weight
 
-    if not signals.has_facebook_pixel:
+    if signals.has_facebook_pixel is False:
         breakdown["opportunities"].append({
             "factor": "No Facebook Pixel",
             "points": config.no_pixel_weight,
@@ -138,7 +138,7 @@ def get_opportunity_breakdown(prospect: Prospect) -> dict:
         })
         breakdown["total"] += config.no_pixel_weight
 
-    if not signals.has_booking_system:
+    if signals.has_booking_system is False:
         breakdown["opportunities"].append({
             "factor": "No booking system",
             "points": config.no_booking_weight,
@@ -203,7 +203,7 @@ def get_opportunity_breakdown(prospect: Prospect) -> dict:
         })
         breakdown["total"] += config.running_ads_penalty
 
-    if signals.has_google_analytics and signals.has_facebook_pixel:
+    if signals.has_google_analytics is True and signals.has_facebook_pixel is True:
         breakdown["strengths"].append({
             "factor": "Has both GA and FB tracking",
             "points": abs(config.good_tracking_penalty),
