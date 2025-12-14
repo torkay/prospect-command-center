@@ -2,7 +2,11 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
     <title>Prospect Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -19,6 +23,41 @@
             --text-muted: #71717a;
             --accent: #22c55e;
             --accent-hover: #16a34a;
+
+            /* Responsive spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+
+            /* Touch targets */
+            --touch-target-min: 44px;
+
+            /* Mobile-specific */
+            --bottom-nav-height: 64px;
+            --mobile-header-height: 56px;
+            --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* Base responsive adjustments */
+        @media (max-width: 1024px) {
+            :root {
+                --spacing-lg: 20px;
+                --spacing-xl: 24px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            :root {
+                --spacing-md: 12px;
+                --spacing-lg: 16px;
+                --spacing-xl: 20px;
+            }
+
+            body {
+                font-size: 15px;
+            }
         }
 
         body {
@@ -95,6 +134,8 @@
             position: fixed;
             left: 0;
             top: 0;
+            z-index: 40;
+            transition: transform 0.3s ease;
         }
 
         .sidebar-item {
@@ -123,6 +164,259 @@
         .main-content {
             margin-left: 240px;
             min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        /* Tablet: Collapsible sidebar */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 39;
+            }
+
+            .sidebar-overlay.visible {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Mobile: Bottom navigation */
+        @media (max-width: 640px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+            }
+
+            .bottom-nav {
+                display: flex;
+            }
+
+            header.sticky {
+                position: sticky;
+                top: 0;
+                z-index: 30;
+            }
+        }
+
+        /* ============================================
+           BOTTOM NAVIGATION (Mobile only)
+           ============================================ */
+
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--bottom-nav-height);
+            padding-bottom: var(--safe-area-bottom);
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            z-index: 50;
+        }
+
+        .bottom-nav-items {
+            display: flex;
+            height: 100%;
+        }
+
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.15s;
+            min-height: var(--touch-target-min);
+            position: relative;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--accent);
+        }
+
+        .bottom-nav-item:active {
+            background: var(--bg-tertiary);
+        }
+
+        .bottom-nav-item .icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .bottom-nav-item .label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .bottom-nav-item .badge {
+            position: absolute;
+            top: 4px;
+            right: calc(50% - 20px);
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: var(--accent);
+            color: #000;
+            font-size: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ============================================
+           FLOATING ACTION BUTTON (Mobile)
+           ============================================ */
+
+        .fab {
+            display: none;
+            position: fixed;
+            bottom: calc(var(--bottom-nav-height) + var(--spacing-md) + var(--safe-area-bottom));
+            right: var(--spacing-md);
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 45;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        .fab .icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        @media (max-width: 640px) {
+            .fab {
+                display: flex;
+            }
+        }
+
+        /* ============================================
+           MOBILE MENU DRAWER
+           ============================================ */
+
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 80;
+        }
+
+        .mobile-menu-overlay.visible {
+            display: block;
+        }
+
+        .mobile-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            max-height: 70vh;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 81;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mobile-menu.open {
+            transform: translateY(0);
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mobile-menu-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .mobile-menu-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: var(--spacing-md);
+            padding-bottom: calc(var(--spacing-xl) + var(--safe-area-bottom));
+        }
+
+        .mobile-menu-section {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .mobile-menu-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .mobile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) 0;
+            color: var(--text-primary);
+            text-decoration: none;
+            min-height: var(--touch-target-min);
+        }
+
+        .mobile-menu-item i {
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+        }
+
+        .mobile-menu-item .count {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
         }
 
         /* Table */
@@ -498,6 +792,424 @@
         .tech-field-value {
             font-weight: 500;
         }
+
+        /* ============================================
+           MOBILE DETAIL PANEL (Full screen)
+           ============================================ */
+
+        @media (max-width: 640px) {
+            .detail-panel {
+                width: 100%;
+                border-left: none;
+                border-radius: 0;
+                z-index: 60;
+            }
+
+            .detail-header {
+                position: sticky;
+                top: 0;
+                background: var(--bg-secondary);
+                z-index: 10;
+                padding: var(--spacing-md);
+            }
+
+            .detail-content {
+                -webkit-overflow-scrolling: touch;
+                padding: var(--spacing-md);
+                padding-bottom: calc(var(--spacing-xl) + var(--safe-area-bottom));
+            }
+
+            .detail-section .btn-primary,
+            .detail-section .btn-secondary {
+                min-height: var(--touch-target-min);
+                padding: 12px 16px;
+            }
+        }
+
+        /* Tablet: Detail panel with overlay */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .detail-panel {
+                width: 380px;
+                z-index: 60;
+            }
+
+            .detail-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 59;
+            }
+
+            .detail-overlay.visible {
+                display: block;
+            }
+        }
+
+        /* ============================================
+           MOBILE PROSPECT CARDS
+           ============================================ */
+
+        .prospect-cards {
+            display: none;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        @media (max-width: 640px) {
+            /* Hide table on mobile */
+            .data-table-wrapper,
+            .card.p-0.overflow-hidden {
+                display: none;
+            }
+
+            /* Show cards on mobile */
+            .prospect-cards {
+                display: flex;
+            }
+        }
+
+        .prospect-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: var(--spacing-md);
+            cursor: pointer;
+        }
+
+        .prospect-card:active {
+            background: var(--bg-tertiary);
+        }
+
+        .prospect-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .prospect-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px 0;
+        }
+
+        .prospect-card-domain {
+            font-size: 13px;
+            color: #60a5fa;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .prospect-card-scores {
+            display: flex;
+            gap: 6px;
+        }
+
+        .prospect-card-contact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            margin: var(--spacing-sm) 0;
+        }
+
+        .prospect-card-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-primary);
+            min-height: var(--touch-target-min);
+            border: none;
+            cursor: pointer;
+        }
+
+        .prospect-card-contact-item:active {
+            background: var(--border);
+        }
+
+        .prospect-card-notes {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--border);
+        }
+
+        .prospect-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--border);
+        }
+
+        .prospect-card-status {
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ============================================
+           MOBILE FILTERS
+           ============================================ */
+
+        @media (max-width: 640px) {
+            .filters-toolbar {
+                display: flex;
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+
+            .filters-toolbar .input-field,
+            .filters-toolbar select {
+                width: 100%;
+                min-height: var(--touch-target-min);
+            }
+
+            /* Filter chips for horizontal scroll */
+            .filter-chips {
+                display: flex;
+                gap: var(--spacing-sm);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: var(--spacing-sm);
+                margin: 0 calc(-1 * var(--spacing-md));
+                padding-left: var(--spacing-md);
+                padding-right: var(--spacing-md);
+            }
+
+            .filter-chips::-webkit-scrollbar {
+                display: none;
+            }
+
+            .filter-chip {
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 14px;
+                background: var(--bg-tertiary);
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                font-size: 13px;
+                white-space: nowrap;
+                min-height: 36px;
+            }
+
+            .filter-chip.active {
+                background: rgba(34, 197, 94, 0.15);
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+        }
+
+        /* ============================================
+           MOBILE SEARCH FORM
+           ============================================ */
+
+        @media (max-width: 640px) {
+            .search-form,
+            #search-form {
+                display: flex;
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+
+            .search-form label,
+            #search-form label {
+                font-size: 13px;
+                font-weight: 500;
+                color: var(--text-secondary);
+            }
+
+            .search-form .input-field,
+            #search-form .input-field {
+                width: 100%;
+                min-height: var(--touch-target-min);
+                font-size: 16px; /* Prevents iOS zoom */
+            }
+
+            .search-form .btn-primary,
+            #search-form .btn-primary {
+                width: 100%;
+                min-height: 48px;
+                font-size: 16px;
+                justify-content: center;
+            }
+
+            .search-form .btn-secondary,
+            #search-form .btn-secondary {
+                width: 100%;
+                min-height: var(--touch-target-min);
+                justify-content: center;
+            }
+        }
+
+        /* ============================================
+           MOBILE DASHBOARD
+           ============================================ */
+
+        @media (max-width: 640px) {
+            .stats-grid,
+            .grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--spacing-sm);
+            }
+
+            .stat-card,
+            .card {
+                padding: var(--spacing-md);
+            }
+
+            .stat-value,
+            .text-3xl {
+                font-size: 24px;
+            }
+
+            /* Hide command button on mobile */
+            .btn-secondary kbd {
+                display: none;
+            }
+        }
+
+        /* ============================================
+           TOUCH-FRIENDLY INPUTS
+           ============================================ */
+
+        @media (max-width: 640px) {
+            .input-field,
+            select,
+            textarea {
+                font-size: 16px; /* Prevents iOS zoom on focus */
+                min-height: var(--touch-target-min);
+                padding: 12px 14px;
+                border-radius: 10px;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                min-height: var(--touch-target-min);
+                padding: 12px 18px;
+                font-size: 15px;
+                border-radius: 10px;
+            }
+
+            input[type="checkbox"],
+            input[type="radio"] {
+                width: 22px;
+                height: 22px;
+            }
+        }
+
+        /* ============================================
+           MOBILE TOAST NOTIFICATIONS
+           ============================================ */
+
+        @media (max-width: 640px) {
+            .toast {
+                bottom: calc(var(--bottom-nav-height) + var(--spacing-md) + var(--safe-area-bottom));
+                left: var(--spacing-md);
+                right: var(--spacing-md);
+                width: auto;
+            }
+        }
+
+        /* ============================================
+           MOBILE SCORE BADGES
+           ============================================ */
+
+        .score-sm {
+            min-width: 32px;
+            padding: 2px 6px;
+            font-size: 11px;
+        }
+
+        .score-xs {
+            min-width: 28px;
+            padding: 1px 4px;
+            font-size: 10px;
+        }
+
+        @media (max-width: 640px) {
+            .score,
+            .px-2.py-1.rounded.text-xs.font-mono {
+                min-width: 32px;
+                padding: 3px 8px;
+                font-size: 12px;
+            }
+        }
+
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state p {
+            margin: 0 0 var(--spacing-md);
+            font-size: 15px;
+        }
+
+        /* ============================================
+           LANDSCAPE MOBILE
+           ============================================ */
+
+        @media (max-width: 640px) and (orientation: landscape) {
+            .bottom-nav {
+                height: 48px;
+            }
+
+            .bottom-nav-item .label {
+                display: none;
+            }
+
+            .main-content {
+                padding-bottom: calc(48px + var(--safe-area-bottom));
+            }
+        }
+
+        /* ============================================
+           PULL TO REFRESH INDICATOR
+           ============================================ */
+
+        .pull-indicator {
+            display: none;
+            position: fixed;
+            top: var(--mobile-header-height);
+            left: 50%;
+            transform: translateX(-50%) translateY(-100%);
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            z-index: 100;
+            transition: transform 0.2s;
+        }
+
+        .pull-indicator.visible {
+            display: block;
+        }
+
+        .pull-indicator.pulling {
+            transform: translateX(-50%) translateY(20px);
+        }
     </style>
 </head>
 <body>
@@ -611,6 +1323,85 @@
         </div>
     </main>
 
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <div class="bottom-nav-items">
+            <a href="#" class="bottom-nav-item active" data-page="dashboard" onclick="navigateTo('dashboard'); return false;">
+                <i data-lucide="layout-dashboard" class="icon"></i>
+                <span class="label">Dashboard</span>
+            </a>
+
+            <a href="#" class="bottom-nav-item" data-page="search" onclick="navigateTo('search'); return false;">
+                <i data-lucide="search" class="icon"></i>
+                <span class="label">Search</span>
+            </a>
+
+            <a href="#" class="bottom-nav-item" data-page="prospects" onclick="navigateTo('prospects'); return false;">
+                <i data-lucide="users" class="icon"></i>
+                <span class="label">Prospects</span>
+                <span class="badge" id="bottom-nav-prospect-count" style="display: none;">0</span>
+            </a>
+
+            <a href="#" class="bottom-nav-item" data-page="campaigns" onclick="navigateTo('campaigns'); return false;">
+                <i data-lucide="folder" class="icon"></i>
+                <span class="label">Campaigns</span>
+            </a>
+
+            <a href="#" class="bottom-nav-item" onclick="openMobileMenu(); return false;">
+                <i data-lucide="menu" class="icon"></i>
+                <span class="label">More</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Floating Action Button (Mobile) -->
+    <button class="fab" id="fab" onclick="handleFabClick()">
+        <i data-lucide="plus" class="icon"></i>
+    </button>
+
+    <!-- Mobile Menu Drawer -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+    <div class="mobile-menu" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <h3>Menu</h3>
+            <button class="btn-secondary" onclick="closeMobileMenu()" style="padding: 8px;">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="mobile-menu-content">
+            <div class="mobile-menu-section">
+                <div class="mobile-menu-section-title">Pipeline</div>
+                <a href="#" class="mobile-menu-item" onclick="navigateTo('prospects', 'status=new'); closeMobileMenu(); return false;">
+                    <i data-lucide="inbox"></i>
+                    <span>New</span>
+                    <span class="count" id="mobile-new-count">0</span>
+                </a>
+                <a href="#" class="mobile-menu-item" onclick="navigateTo('prospects', 'status=qualified'); closeMobileMenu(); return false;">
+                    <i data-lucide="star"></i>
+                    <span>Qualified</span>
+                    <span class="count" id="mobile-qualified-count">0</span>
+                </a>
+                <a href="#" class="mobile-menu-item" onclick="navigateTo('prospects', 'status=contacted'); closeMobileMenu(); return false;">
+                    <i data-lucide="send"></i>
+                    <span>Contacted</span>
+                    <span class="count" id="mobile-contacted-count">0</span>
+                </a>
+            </div>
+
+            <div class="mobile-menu-section">
+                <div class="mobile-menu-section-title">Actions</div>
+                <a href="#" class="mobile-menu-item" onclick="exportProspects('csv'); closeMobileMenu(); return false;">
+                    <i data-lucide="download"></i>
+                    <span>Export CSV</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pull to Refresh Indicator -->
+    <div id="pull-indicator" class="pull-indicator">Pull to refresh</div>
+
     <!-- Detail Panel (slide-out) -->
     <aside class="detail-panel" id="detail-panel">
         <div class="detail-header">
@@ -680,6 +1471,137 @@
         };
 
         // ============================================
+        // Device & Responsive Utilities
+        // ============================================
+        const BREAKPOINTS = {
+            mobile: 640,
+            tablet: 1024,
+        };
+
+        function isMobile() {
+            return window.innerWidth < BREAKPOINTS.mobile;
+        }
+
+        function isTablet() {
+            return window.innerWidth >= BREAKPOINTS.mobile && window.innerWidth < BREAKPOINTS.tablet;
+        }
+
+        function isDesktop() {
+            return window.innerWidth >= BREAKPOINTS.tablet;
+        }
+
+        function isTouchDevice() {
+            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        }
+
+        // Update layout on resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                updateLayoutForDevice();
+            }, 100);
+        });
+
+        function updateLayoutForDevice() {
+            const mobile = isMobile();
+
+            // Update bottom nav active state
+            updateBottomNav(currentPage);
+
+            // Update FAB icon based on context
+            updateFabIcon();
+        }
+
+        // ============================================
+        // Mobile Navigation
+        // ============================================
+        function updateBottomNav(page) {
+            document.querySelectorAll('.bottom-nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.page === page) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        function updateBottomNavBadge(count) {
+            const badge = document.getElementById('bottom-nav-prospect-count');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        function openMobileMenu() {
+            document.getElementById('mobile-menu-overlay').classList.add('visible');
+            document.getElementById('mobile-menu').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('mobile-menu-overlay').classList.remove('visible');
+            document.getElementById('mobile-menu').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        // FAB context-aware action
+        function handleFabClick() {
+            switch (currentPage) {
+                case 'dashboard':
+                case 'prospects':
+                    navigateTo('search');
+                    break;
+                case 'search':
+                    document.getElementById('search-form')?.requestSubmit();
+                    break;
+                case 'campaigns':
+                    navigateTo('search');
+                    break;
+                default:
+                    navigateTo('search');
+            }
+        }
+
+        function updateFabIcon() {
+            const fab = document.getElementById('fab');
+            if (!fab) return;
+
+            const iconEl = fab.querySelector('i');
+            if (!iconEl) return;
+
+            let icon = 'plus';
+
+            switch (currentPage) {
+                case 'search':
+                    icon = 'search';
+                    break;
+                default:
+                    icon = 'plus';
+            }
+
+            iconEl.setAttribute('data-lucide', icon);
+            lucide.createIcons();
+        }
+
+        // Update mobile menu counts
+        function updateMobileMenuCounts(stats) {
+            const newCount = document.getElementById('mobile-new-count');
+            const qualifiedCount = document.getElementById('mobile-qualified-count');
+            const contactedCount = document.getElementById('mobile-contacted-count');
+
+            if (stats.status_breakdown) {
+                if (newCount) newCount.textContent = stats.status_breakdown.new || 0;
+                if (qualifiedCount) qualifiedCount.textContent = stats.status_breakdown.qualified || 0;
+                if (contactedCount) contactedCount.textContent = stats.status_breakdown.contacted || 0;
+            }
+        }
+
+        // ============================================
         // Initialize
         // ============================================
         document.addEventListener('DOMContentLoaded', async () => {
@@ -690,6 +1612,7 @@
             setupKeyboardShortcuts();
             setupNavigation();
             loadCampaigns();
+            updateLayoutForDevice();
         });
 
         // ============================================
@@ -735,7 +1658,7 @@
         }
 
         function navigateTo(page, filter = null) {
-            // Update active state
+            // Update active state for sidebar
             document.querySelectorAll('.sidebar-item').forEach(el => {
                 el.classList.remove('active');
             });
@@ -746,6 +1669,10 @@
 
             currentPage = page;
             currentFilters = filter ? parseFilter(filter) : {};
+
+            // Update mobile navigation
+            updateBottomNav(page);
+            updateFabIcon();
 
             // Load page
             switch (page) {
@@ -1169,8 +2096,8 @@
                         </div>
                     </div>
 
-                    <!-- Table -->
-                    <div class="card p-0 overflow-hidden">
+                    <!-- Table (Desktop) -->
+                    <div class="card p-0 overflow-hidden data-table-wrapper">
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -1189,6 +2116,11 @@
                                 ${renderProspectsRows(prospects)}
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Cards (Mobile) -->
+                    <div class="prospect-cards">
+                        ${renderProspectCards(prospects)}
                     </div>
                 `;
 
@@ -1385,6 +2317,99 @@
             `}).join('');
         }
 
+        // ============================================
+        // Mobile Prospect Cards
+        // ============================================
+        function renderProspectCards(prospects) {
+            if (!prospects.length) {
+                return `
+                    <div class="empty-state">
+                        <i data-lucide="users" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
+                        <p>No prospects yet</p>
+                        <button class="btn-primary" onclick="navigateTo('search')">
+                            Run a Search
+                        </button>
+                    </div>
+                `;
+            }
+
+            return prospects.map(p => renderProspectCard(p)).join('');
+        }
+
+        function renderProspectCard(p) {
+            const statusIcons = {
+                new: '●',
+                qualified: '★',
+                contacted: '✓',
+                meeting: '◐',
+                won: '✦',
+                lost: '✕',
+                skipped: '→',
+            };
+
+            const cleanName = cleanBusinessName(p.name) || 'Unknown';
+
+            return `
+                <div class="prospect-card" data-id="${p.id}" onclick="openDetailPanel(${p.id})">
+                    <div class="prospect-card-header">
+                        <div>
+                            <h4 class="prospect-card-title">${escapeHtml(cleanName)}</h4>
+                            ${p.domain ? `<a href="https://${p.domain}" target="_blank" class="prospect-card-domain" onclick="event.stopPropagation();">${p.domain}</a>` : ''}
+                            ${p.rating ? `
+                                <div class="business-rating">
+                                    <span class="star">★</span> ${p.rating}
+                                    ${p.review_count ? `<span class="muted">(${formatNumber(p.review_count)})</span>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="prospect-card-scores">
+                            <span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(p.priority_score)}">${Math.round(p.priority_score)}</span>
+                        </div>
+                    </div>
+
+                    <div class="prospect-card-contact">
+                        ${p.phone ? `
+                            <button class="prospect-card-contact-item" onclick="event.stopPropagation(); callPhone('${escapeHtml(p.phone)}');">
+                                <i data-lucide="phone" style="width: 16px; height: 16px;"></i>
+                                ${escapeHtml(p.phone)}
+                            </button>
+                        ` : ''}
+                        ${p.emails ? `
+                            <button class="prospect-card-contact-item" onclick="event.stopPropagation(); sendEmail('${escapeHtml(p.emails.split(',')[0])}');">
+                                <i data-lucide="mail" style="width: 16px; height: 16px;"></i>
+                                ${escapeHtml(p.emails.split(',')[0])}
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    ${p.opportunity_notes ? `
+                        <div class="prospect-card-notes">
+                            ${escapeHtml(smartTruncate(p.opportunity_notes, 100))}
+                        </div>
+                    ` : ''}
+
+                    <div class="prospect-card-footer">
+                        <span class="prospect-card-status status-${p.status}">
+                            ${statusIcons[p.status] || '●'} ${p.status}
+                        </span>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="px-2 py-1 rounded text-xs font-mono score-xs ${scoreClass(p.fit_score)}">F:${p.fit_score}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono score-xs ${scoreClass(p.opportunity_score)}">O:${p.opportunity_score}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Mobile contact actions
+        function callPhone(phone) {
+            window.location.href = `tel:${phone}`;
+        }
+
+        function sendEmail(email) {
+            window.location.href = `mailto:${email}`;
+        }
+
         function scoreClass(score) {
             if (score >= 60) return 'score-high';
             if (score >= 40) return 'score-med';
@@ -1429,6 +2454,10 @@
                 if (pipelineSection) {
                     pipelineSection.style.display = hasProspects ? 'block' : 'none';
                 }
+
+                // Update mobile elements
+                updateBottomNavBadge(stats.total || 0);
+                updateMobileMenuCounts(stats);
             } catch (e) {
                 console.error('Failed to load dashboard counts:', e);
             }
@@ -1974,6 +3003,102 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(() => fn(...args), ms);
             };
+        }
+
+        // ============================================
+        // Pull to Refresh (Mobile)
+        // ============================================
+        let pullStartY = 0;
+        let isPulling = false;
+        let isRefreshing = false;
+
+        function initPullToRefresh() {
+            if (!isMobile()) return;
+
+            const content = document.getElementById('page-content');
+            if (!content) return;
+
+            content.addEventListener('touchstart', (e) => {
+                if (content.scrollTop === 0 && !isRefreshing) {
+                    pullStartY = e.touches[0].clientY;
+                    isPulling = true;
+                }
+            }, { passive: true });
+
+            content.addEventListener('touchmove', (e) => {
+                if (!isPulling || isRefreshing) return;
+
+                const pullDistance = e.touches[0].clientY - pullStartY;
+                const indicator = document.getElementById('pull-indicator');
+
+                if (pullDistance > 0 && content.scrollTop === 0) {
+                    indicator.classList.add('visible');
+
+                    if (pullDistance > 60) {
+                        indicator.classList.add('pulling');
+                        indicator.textContent = 'Release to refresh';
+                    } else {
+                        indicator.classList.remove('pulling');
+                        indicator.textContent = 'Pull to refresh';
+                    }
+                }
+            }, { passive: true });
+
+            content.addEventListener('touchend', async () => {
+                if (!isPulling) return;
+                isPulling = false;
+
+                const indicator = document.getElementById('pull-indicator');
+
+                if (indicator.classList.contains('pulling')) {
+                    isRefreshing = true;
+                    indicator.textContent = 'Refreshing...';
+
+                    await refreshCurrentPage();
+
+                    indicator.classList.remove('visible', 'pulling');
+                    isRefreshing = false;
+                } else {
+                    indicator.classList.remove('visible');
+                }
+            }, { passive: true });
+        }
+
+        async function refreshCurrentPage() {
+            triggerHaptic();
+
+            switch (currentPage) {
+                case 'prospects':
+                    await loadProspectsPage();
+                    break;
+                case 'dashboard':
+                    await loadDashboard();
+                    break;
+                case 'campaigns':
+                    await loadCampaignsPage();
+                    break;
+            }
+
+            await loadDashboardCounts();
+        }
+
+        // Haptic feedback
+        function triggerHaptic() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(10);
+            }
+        }
+
+        // Initialize pull to refresh when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initPullToRefresh();
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW registration failed:', err));
         }
     </script>
 </body>

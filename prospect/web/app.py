@@ -78,6 +78,26 @@ def create_app() -> FastAPI:
             from fastapi.responses import RedirectResponse
             return RedirectResponse(url="/legacy/")
 
+    # PWA manifest
+    @app.get("/manifest.json")
+    async def serve_manifest():
+        """Serve the PWA manifest."""
+        from fastapi.responses import FileResponse
+        manifest_path = FRONTEND_DIR / "manifest.json"
+        if manifest_path.exists():
+            return FileResponse(manifest_path, media_type="application/json")
+        return {"error": "Not found"}
+
+    # Service worker (must be served from root for scope)
+    @app.get("/sw.js")
+    async def serve_service_worker():
+        """Serve the service worker."""
+        from fastapi.responses import FileResponse
+        sw_path = FRONTEND_DIR / "sw.js"
+        if sw_path.exists():
+            return FileResponse(sw_path, media_type="application/javascript")
+        return {"error": "Not found"}
+
     # Legacy HTML routes (moved to /legacy prefix to not conflict with new frontend)
     from prospect.web.routes import router as html_router
     app.include_router(html_router, prefix="/legacy", tags=["legacy"])
