@@ -11,7 +11,8 @@ def get_database_url() -> str:
     """
     Get database URL based on environment.
 
-    Railway: Uses /data volume for persistence (mounted persistent volume)
+    Railway: Uses /data volume for persistence (if mounted)
+    Fallback: Uses /app/data for Railway without volume
     Local: Uses ./prospects.db in project root
     """
     # Check for explicit DATABASE_URL first (allows override)
@@ -20,8 +21,14 @@ def get_database_url() -> str:
 
     # Check for Railway environment
     if os.environ.get("RAILWAY_ENVIRONMENT"):
-        # Railway persistent volume mounted at /data
-        return "sqlite:////data/prospects.db"
+        # Try /data first (persistent volume mount point)
+        if os.path.exists("/data") and os.access("/data", os.W_OK):
+            return "sqlite:////data/prospects.db"
+
+        # Fallback to /app/data (within the app directory)
+        # This won't persist across deploys but allows the app to start
+        os.makedirs("/app/data", exist_ok=True)
+        return "sqlite:////app/data/prospects.db"
 
     # Local development
     return "sqlite:///./prospects.db"
