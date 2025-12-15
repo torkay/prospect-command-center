@@ -1,0 +1,24 @@
+name: Post-Deploy Verify
+
+on:
+  workflow_run:
+    workflows: ["Railway Deploy (GHCR)"]
+    types:
+      - completed
+
+jobs:
+  verify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify deployment health
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "DEPLOY_URL secret not set; skipping verification" && exit 0
+          fi
+          bash scripts/verify-deployment.sh "$DEPLOY_URL"
+

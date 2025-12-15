@@ -1,0 +1,29 @@
+name: Railway Deploy (GHCR)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'torkay' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          npm i -g @railway/cli
+
+      - name: Deploy image to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          echo "Deploying image ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}"
+          railway login --token "$RAILWAY_TOKEN"
+          # Update variables (ensure SERPAPI_KEY is already set in Railway UI or as a secret)
+          # Deploy the GHCR image to the specified service
+          railway up --service "$RAILWAY_SERVICE_ID" --image "ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}" --yes
+

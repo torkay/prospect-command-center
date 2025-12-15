@@ -12,6 +12,18 @@ Steps:
 
 Health check: `/api/v1/health`
 
+### Use GHCR Image on Railway
+
+You can deploy the prebuilt image from GHCR instead of building from source:
+
+- In Railway Dashboard: New Service → Deploy from Container Registry → GitHub → Select `ghcr.io/torkay/prospect-command-center`
+- Choose the desired tag (e.g., `1.0.1` or `latest`)
+- Add environment variable `SERPAPI_KEY`
+- (Optional) Add `ALLOWED_ORIGINS=https://<your-domain>`
+- Ensure a persistent volume is attached at `/data` for the SQLite DB
+
+Alternatively, configure the provided GitHub Actions workflow with secrets to deploy on every tagged release.
+
 ## Docker
 
 ### Build
@@ -47,4 +59,3 @@ docker compose -f docker/docker-compose.beta.yml up
 ```bash
 ./scripts/verify-deployment.sh https://your-app.up.railway.app
 ```
-
