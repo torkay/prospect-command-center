@@ -1,1 +1,1 @@
-"""Tests for prospect scraper."""
+"""Tests for Prospect Command Center."""

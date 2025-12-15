@@ -376,7 +376,7 @@ class TestSheetsIntegration:
         )
 
         exporter = SheetsExporter()
-        url = exporter.export([prospect], name="Prospect Scraper Test")
+        url = exporter.export([prospect], name="Prospect Command Center Test")
 
         assert "docs.google.com/spreadsheets" in url
         print(f"\nCreated test sheet: {url}")

@@ -1,15 +1,15 @@
 #!/bin/bash
 #
-# Prospect Scraper Beta Setup
+# Prospect Command Center Beta Setup
 # One command to get testing:
-# curl -sSL https://raw.githubusercontent.com/torkay/prospect-scraper/beta/scripts/beta-setup.sh | bash
+# curl -sSL https://raw.githubusercontent.com/torkay/prospect-command-center/beta/scripts/beta-setup.sh | bash
 #
 
 set -e
 
-REPO="https://github.com/torkay/prospect-scraper.git"
+REPO="https://github.com/torkay/prospect-command-center.git"
 BRANCH="beta"
-DIR="prospect-scraper-beta"
+DIR="prospect-command-center-beta"
 
 # Colors
 RED='\033[0;31m'
@@ -19,7 +19,7 @@ NC='\033[0m'
 
 echo ""
 echo "============================================================"
-echo "       PROSPECT SCRAPER - BETA TESTING SETUP                "
+echo "       PROSPECT COMMAND CENTER - BETA TESTING SETUP         "
 echo "============================================================"
 echo ""
 
@@ -144,5 +144,5 @@ echo ""
 echo "  5. Run tests:"
 echo "     ${YELLOW}make test${NC}"
 echo ""
-echo "Report issues: https://github.com/torkay/prospect-scraper/issues"
+echo "Report issues: https://github.com/torkay/prospect-command-center/issues"
 echo ""

@@ -1,61 +1,53 @@
-# Prospect Scraper
+# Prospect Command Center
 
-A prospect discovery tool for marketing agencies. Searches Google via SerpAPI to find local businesses, analyzes their websites for marketing gaps, and outputs a scored, prioritized list of prospects.
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/torkay/prospect-command-center)
+
+Intelligent prospect discovery and qualification for marketing agencies.
+
+Prospect Command Center combines automated Google search (via SerpAPI) with website enrichment and a scoring engine to surface high‑value prospects and manage them through a simple pipeline.
+
+• Smart discovery • Intelligent scoring • Pipeline workflow • Modern web UI
 
 ## Features
 
-- **Reliable Google Search** via SerpAPI (no CAPTCHA issues)
-- **Comprehensive SERP Data**: Ads, Maps/Local Pack, and Organic results
-- **Website Enrichment**: CMS detection, tracking pixels, contact info extraction
-- **Smart Scoring**: Fit score (reachability) + Opportunity score (marketing gaps)
-- **Multiple Export Formats**: CSV, JSON, JSONL, Google Sheets
-- **Power User CLI**: Filtering, parallel processing, batch mode
-- **Technical Web UI**: Dark theme, REST API, WebSocket updates
-- **Docker Ready**: Production and beta deployment configs
+- Smart discovery across Ads, Maps, and Organic results
+- Website enrichment (CMS, analytics/pixel, emails/phones, booking)
+- Three scores: Fit, Opportunity, and Priority (weighted)
+- Web UI with real‑time progress, API docs, and keyboard shortcuts
+- CLI for power users (batch mode, filters, multiple formats)
+- Exports to CSV/JSON/JSONL and Google Sheets
+- Docker and Railway deployment ready
 
 ## Quick Start
 
 ```bash
 # Clone and setup
-git clone https://github.com/torkay/prospect-scraper.git
-cd prospect-scraper
+git clone https://github.com/torkay/prospect-command-center.git
+cd prospect-command-center
 ./scripts/setup.sh
 
-# Add your API key
-echo "SERPAPI_KEY=your_key_here" >> .env
+# Configure API key
+cp .env.example .env
+edit .env  # add SERPAPI_KEY
 
 # Activate environment
 source venv/bin/activate
 
-# Run a search
+# Run the web UI
+make run
+# open http://localhost:8000
+
+# Or run a CLI search
 prospect search "plumber" "Sydney" --limit 10
 ```
 
 ## Installation
 
 ```bash
-# Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -e ".[dev]"
-
-# Install browser for fallback scraping
 playwright install chromium
-```
-
-## Setup
-
-### Get a SerpAPI Key
-
-1. Sign up at [SerpAPI](https://serpapi.com/) (100 free searches/month)
-2. Copy your API key from the dashboard
-3. Set it in your `.env` file:
-
-```bash
-cp .env.example .env
-# Edit .env and add your SERPAPI_KEY
 ```
 
 ## CLI Usage
@@ -64,301 +56,116 @@ cp .env.example .env
 # Basic search
 prospect search "buyer's agent" "Brisbane, QLD"
 
-# With filtering
-prospect search "plumber" "Sydney" --limit 50 --min-fit 40 --require-phone
-
-# JSON output (pipeable to jq)
+# Filtered and JSON output
 prospect search "accountant" "Melbourne" -f json -q | jq '.[:5]'
 
-# Parallel enrichment
-prospect search "dentist" "Perth" --parallel 5
-
-# Skip enrichment (faster, API-only)
+# Faster (skip enrichment)
 prospect search "real estate agent" "Adelaide" --skip-enrichment
 
 # Export to Google Sheets
 prospect search "lawyer" "Canberra" --sheets "Lawyer Prospects"
 
-# Batch mode from YAML config
+# Batch from YAML config
 prospect batch config.yaml
 
-# Check configuration
-prospect check
-
-# Start web UI
+# Start the web server
 prospect web --port 8000
 ```
 
-### Command Reference
+Key options: `--limit`, `--format`, `--parallel`, `--min-fit`, `--min-opportunity`, `--min-priority`, `--require-phone`, `--require-email`, `--skip-enrichment`, `--sheets`.
 
-| Command | Description |
-|---------|-------------|
-| `prospect search` | Search for prospects |
-| `prospect batch` | Run batch from YAML config |
-| `prospect check` | Validate configuration |
-| `prospect version` | Show version info |
-| `prospect web` | Start web server |
+## Web UI & API
 
-### Search Options
+- App: `http://localhost:8000`
+- OpenAPI: `/docs` (Swagger) and `/redoc`
+- WebSocket progress: `/ws/jobs/{id}`
 
-| Option | Description |
-|--------|-------------|
-| `--limit, -l` | Max results (default: 20) |
-| `--output, -o` | Output file path |
-| `--format, -f` | Format: csv, json, jsonl, table |
-| `--skip-enrichment` | Skip website analysis |
-| `--parallel` | Concurrent enrichment (1-10) |
-| `--min-fit` | Minimum fit score (0-100) |
-| `--min-opportunity` | Minimum opportunity score |
-| `--min-priority` | Minimum priority score |
-| `--require-phone` | Only include with phone |
-| `--require-email` | Only include with email |
-| `--sheets` | Export to Google Sheets |
-| `--quiet, -q` | Suppress progress output |
-| `--debug` | Enable debug logging |
+Core endpoints (see docs/API.md for full details):
+- `POST /api/v1/search` – start async search
+- `POST /api/v1/search/sync` – synchronous search
+- `GET /api/v1/jobs` – list recent jobs
+- `GET /api/v1/prospects` – list prospects
+- `GET /api/v1/dashboard/summary` – summary stats
+- `GET /api/v1/config` – read config; `PATCH /api/v1/config` – update
 
-## Web UI
+## Scoring Overview
 
-Start the web server:
+Priority = Fit × 0.4 + Opportunity × 0.6 (default weights)
 
-```bash
-prospect web
-# or
-make run
-```
+- Fit: reachability and quality (website, phone/email, maps, rating, reviews, ads, organic)
+- Opportunity: marketing gaps (no analytics/pixel/booking/email, DIY CMS, slow site, poor SEO)
 
-Open http://localhost:8000
+See docs/SCORING.md for details and configuration options.
 
-### API Endpoints
+## Deployment
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/search` | POST | Start async search |
-| `/api/v1/search/sync` | POST | Synchronous search |
-| `/api/v1/jobs` | GET | List recent jobs |
-| `/api/v1/jobs/{id}` | GET | Get job details |
-| `/api/v1/jobs/{id}` | DELETE | Cancel/delete job |
-| `/api/v1/jobs/{id}/results` | GET | Export results |
-| `/api/v1/config` | GET/PATCH | Configuration |
-| `/api/v1/health` | GET | Health check |
-| `/ws/jobs/{id}` | WebSocket | Real-time updates |
+### Railway
 
-API documentation available at `/docs` (Swagger UI) and `/redoc`.
+- Repo includes `railway.toml` and a persistent volume at `/data`
+- Set `SERPAPI_KEY` in Railway variables
+- Default start: `uvicorn prospect.web.app:app --host 0.0.0.0 --port $PORT`
 
-## Scoring
-
-### Fit Score (0-100)
-Measures how easily you can reach and contact the prospect:
-
-| Factor | Points |
-|--------|--------|
-| Has website | +15 |
-| Has phone | +15 |
-| Has email | +10 |
-| Found in Maps | +15 |
-| Good rating (4.0+) | +10 |
-| Has reviews (10+) | +10 |
-| Running ads | +10 |
-| Organic top 10 | +15 |
-
-### Opportunity Score (0-100)
-Measures how much they could benefit from your services:
-
-| Factor | Points |
-|--------|--------|
-| No website | +80 |
-| No Google Analytics | +15 |
-| No Facebook Pixel | +10 |
-| No booking system | +15 |
-| No contact email | +10 |
-| Using weak CMS | +10 |
-| Poor organic ranking | +20 |
-| Already running ads | -10 |
-
-## Docker
+### Docker
 
 ```bash
-# Build image
+# Build
 make docker
 
-# Run with docker-compose
-docker-compose -f docker/docker-compose.yml up
+# Local compose
+docker compose -f docker/docker-compose.yml up
 
-# Beta testing
-docker-compose -f docker/docker-compose.beta.yml up
+# Beta compose
+docker compose -f docker/docker-compose.beta.yml up
 ```
 
-## Deploy to Railway
+### Container Image (GHCR)
 
-One-click deployment to Railway (free tier):
-
-### Quick Deploy
-
-1. **Fork this repository** on GitHub
-
-2. **Go to [railway.app](https://railway.app)** and sign in with GitHub
-
-3. **Create new project** → "Deploy from GitHub repo" → Select your fork
-
-4. **Add environment variable**:
-   - `SERPAPI_KEY` = your SerpAPI key
-
-5. **Generate domain**: Settings → Networking → Generate Domain
-
-6. **Your app is live!** at `https://your-app.up.railway.app`
-
-### What Gets Deployed
-
-| Component | Details |
-|-----------|---------|
-| **Web Server** | FastAPI with Uvicorn |
-| **Database** | SQLite with persistent volume at `/data` |
-| **Health Check** | `/api/v1/health` |
-| **Frontend** | Single-page app at `/` |
-
-### Cost (Free Tier)
-
-Railway's free tier includes $5/month credit:
-
-| Resource | Usage | Monthly Cost |
-|----------|-------|--------------|
-| Compute | ~3 hours/month | ~$0.00 |
-| Memory | ~256MB | Included |
-| Storage | ~50MB SQLite | Included |
-| **Total** | | **$0.00** |
-
-### Verify Deployment
+Images are published to GitHub Container Registry on tagged releases.
 
 ```bash
-# Health check
-curl https://your-app.up.railway.app/api/v1/health
+# Pull specific version
+docker pull ghcr.io/torkay/prospect-command-center:1.0.0
 
-# Expected: {"status":"healthy","serpapi":true,"sheets":false,...}
+# Or latest (from latest tagged release)
+docker pull ghcr.io/torkay/prospect-command-center:latest
+
+# Run
+docker run -p 8000:8000 -e SERPAPI_KEY=your_key ghcr.io/torkay/prospect-command-center:1.0.0
 ```
 
-### Persistent Data
-
-The SQLite database is stored on a persistent volume that survives restarts and redeploys. Your campaigns, prospects, and search history are preserved.
-
-## Development
-
-```bash
-# Install dev dependencies
-make dev
-
-# Run tests
-make test
-
-# Run tests with coverage
-make test-cov
-
-# Lint code
-make lint
-
-# Format code
-make format
-```
+To publish a new image: push a semver tag, e.g. `v1.0.1`.
 
 ## Project Structure
 
 ```
-prospect-scraper/
+prospect-command-center/
 ├── prospect/
-│   ├── __init__.py
+│   ├── cli.py              # CLI
 │   ├── api.py              # Library API
-│   ├── cli.py              # Click CLI
 │   ├── config.py           # Settings & YAML config
 │   ├── models.py           # Data models
 │   ├── dedup.py            # Deduplication
 │   ├── export.py           # CSV/JSON export
-│   ├── scraper/
-│   │   ├── serpapi.py      # SerpAPI client
-│   │   └── serp.py         # HTML parsing
-│   ├── enrichment/
-│   │   ├── crawler.py      # Website fetching
-│   │   ├── contacts.py     # Email/phone extraction
-│   │   └── technology.py   # CMS/tracking detection
-│   ├── scoring/
-│   │   ├── fit.py          # Fit score
-│   │   ├── opportunity.py  # Opportunity score
-│   │   └── notes.py        # Notes generation
-│   ├── sheets/
-│   │   └── client.py       # Google Sheets export
-│   └── web/
-│       ├── app.py          # FastAPI app
-│       ├── api/v1/         # REST API
-│       ├── ws/             # WebSocket
-│       └── frontend/       # SPA UI
-├── tests/
-├── docker/
-├── scripts/
-├── .github/workflows/
-├── requirements.txt
-├── pyproject.toml
+│   ├── scraper/            # SerpAPI client & helpers
+│   ├── enrichment/         # Website analysis
+│   ├── scoring/            # Fit/Opportunity engine
+│   └── web/                # FastAPI app + SPA
+├── docs/                   # Architecture, API, deployment
+├── docker/                 # Dockerfiles and compose
+├── scripts/                # Setup and utilities
+├── tests/                  # Unit/integration tests
+├── requirements.txt        # Dependencies (runtime)
+├── pyproject.toml          # Package metadata
 └── README.md
 ```
 
----
+## Documentation
 
-## Beta Testing
-
-### Quick Start (One Command)
-
-```bash
-curl -sSL https://raw.githubusercontent.com/torkay/prospect-scraper/beta/scripts/beta-setup.sh | bash
-```
-
-### Manual Setup
-
-```bash
-# Clone beta branch
-git clone -b beta https://github.com/torkay/prospect-scraper.git
-cd prospect-scraper
-
-# Run setup
-./scripts/setup.sh
-
-# Add your API key
-echo "SERPAPI_KEY=your_key" >> .env
-
-# Test
-source venv/bin/activate
-./scripts/quick-test.sh
-```
-
-### What to Test
-
-1. **CLI Search**
-   ```bash
-   prospect search "buyer's agent" "Brisbane" --limit 10
-   ```
-
-2. **JSON Output**
-   ```bash
-   prospect search "plumber" "Sydney" -f json -q | jq '.[:3]'
-   ```
-
-3. **Web UI**
-   ```bash
-   make run
-   # Open http://localhost:8000
-   ```
-
-4. **Filters**
-   ```bash
-   prospect search "accountant" "Melbourne" --min-fit 50 --require-phone
-   ```
-
-### Report Issues
-
-Found a bug? [Open an issue](https://github.com/torkay/prospect-scraper/issues/new) with:
-- What you tried
-- What happened
-- What you expected
-- Your OS and Python version
-
----
+- Architecture: `docs/ARCHITECTURE.md`
+- API Reference: `docs/API.md`
+- Deployment: `docs/DEPLOYMENT.md`
+- Scoring Methodology: `docs/SCORING.md`
 
 ## License
 
-MIT - See [LICENSE](LICENSE)
+MIT – see `LICENSE`

@@ -1,4 +1,4 @@
-"""Configuration settings for the prospect scraper."""
+"""Configuration settings for the Prospect Command Center."""
 
 import os
 from dataclasses import dataclass, field

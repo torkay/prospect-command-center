@@ -39,7 +39,7 @@ clean:
 
 # Build Docker image
 docker:
-	docker build -t prospect-scraper -f docker/Dockerfile .
+	docker build -t prospect-command-center -f docker/Dockerfile .
 
 # Run web server
 run:

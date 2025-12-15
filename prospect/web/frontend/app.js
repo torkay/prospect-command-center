@@ -1,5 +1,5 @@
 /**
- * Prospect Scraper - Technical UI
+ * Prospect Command Center - Frontend UI
  * Vanilla JS, no dependencies
  */
 

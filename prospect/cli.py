@@ -1,5 +1,5 @@
 """
-Prospect Scraper CLI - Power User Edition
+Prospect Command Center CLI - Power User Edition
 
 Examples:
     # Basic search
@@ -647,7 +647,7 @@ def check():
 def version():
     """Show version info."""
     from prospect import __version__
-    click.echo(f"prospect-scraper {__version__}")
+    click.echo(f"prospect-command-center {__version__}")
 
 
 # ============================================================================
@@ -664,7 +664,7 @@ def web(host: str, port: int, reload: bool) -> None:
 
     console.print(
         Panel.fit(
-            f"[bold]Prospect Scraper Web UI[/bold]\n"
+            f"[bold]Prospect Command Center Web UI[/bold]\n"
             f"Running at: [cyan]http://{host}:{port}[/cyan]",
             border_style="blue",
         )

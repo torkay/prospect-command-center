@@ -19,6 +19,10 @@ SCOPES = [
 
 # Default credential locations
 DEFAULT_CRED_PATHS = [
+    # New naming
+    Path.home() / ".config" / "prospect-command-center" / "credentials.json",
+    Path.home() / ".prospect-command-center-credentials.json",
+    # Backward compatibility
     Path.home() / ".config" / "prospect-scraper" / "credentials.json",
     Path.home() / ".prospect-scraper-credentials.json",
     Path("credentials.json"),
@@ -79,7 +83,7 @@ def get_credentials() -> Credentials:
         "4. Download the JSON key file\n"
         "5. Either:\n"
         "   a. Set GOOGLE_SHEETS_CREDENTIALS_FILE=/path/to/credentials.json\n"
-        "   b. Place credentials.json in ~/.config/prospect-scraper/\n"
+        "   b. Place credentials.json in ~/.config/prospect-command-center/ (or ~/.config/prospect-scraper/)\n"
         "   c. Set GOOGLE_SHEETS_CREDENTIALS to the JSON content\n"
     )
 

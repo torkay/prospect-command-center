@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "prospect-scraper"
+name = "prospect-command-center"
 version = "1.0.0"
-description = "Find businesses that need marketing help"
+description = "Intelligent prospect discovery and qualification for marketing agencies"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -55,7 +55,7 @@ dev = [
 prospect = "prospect.cli:cli"
 
 [project.urls]
-Repository = "https://github.com/torkay/prospect-scraper"
+Repository = "https://github.com/torkay/prospect-command-center"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -1,5 +1,5 @@
 """
-Programmatic API for prospect scraper.
+Programmatic API for the Prospect Command Center.
 
 Usage:
     from prospect import search_prospects

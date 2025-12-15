@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Upgraded from beta to production-ready
 - Enhanced scoring with configurable weights
+ - Renamed project to "Prospect Command Center" (from "Prospect Scraper")
 
 ### Fixed
 - Email domain validation for contact extraction

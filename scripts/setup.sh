@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Setting up Prospect Scraper..."
+echo "Setting up Prospect Command Center..."
 
 # Check Python version
 PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)

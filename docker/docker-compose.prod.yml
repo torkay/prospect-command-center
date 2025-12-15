@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  prospect-scraper:
-    image: ghcr.io/${GITHUB_REPOSITORY:-prospect-scraper}:${VERSION:-latest}
+  prospect-command-center:
+    image: ghcr.io/${GITHUB_REPOSITORY:-prospect-command-center}:${VERSION:-latest}
     ports:
       - "${PORT:-8000}:8000"
     environment:
@@ -10,7 +10,7 @@ services:
       - GOOGLE_SHEETS_CREDENTIALS=${GOOGLE_SHEETS_CREDENTIALS:-}
       - GOOGLE_SHEETS_CREDENTIALS_FILE=${GOOGLE_SHEETS_CREDENTIALS_FILE:-}
     volumes:
-      - prospect-data:/app/data
+      - pcc-data:/app/data
     restart: unless-stopped
     deploy:
       resources:
@@ -31,7 +31,7 @@ services:
   #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
   #     - ./certs:/etc/nginx/certs:ro
   #   depends_on:
-  #     - prospect-scraper
+  #     - prospect-command-center
 
 volumes:
-  prospect-data:
+  pcc-data:

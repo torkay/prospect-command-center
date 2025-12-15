@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  prospect-scraper:
+  prospect-command-center:
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -12,8 +12,8 @@ services:
       - GOOGLE_SHEETS_CREDENTIALS=${GOOGLE_SHEETS_CREDENTIALS:-}
       - GOOGLE_SHEETS_CREDENTIALS_FILE=${GOOGLE_SHEETS_CREDENTIALS_FILE:-}
     volumes:
-      - prospect-data:/app/data
+      - pcc-data:/app/data
     restart: unless-stopped
 
 volumes:
-  prospect-data:
+  pcc-data:

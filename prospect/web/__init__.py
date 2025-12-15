@@ -1,4 +1,4 @@
-"""Web UI for Prospect Scraper."""
+"""Web UI for Prospect Command Center."""
 
 from prospect.web.app import create_app
 

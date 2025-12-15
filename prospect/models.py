@@ -1,4 +1,4 @@
-"""Data models for the prospect scraper."""
+"""Data models for the Prospect Command Center."""
 
 from dataclasses import dataclass, field
 from typing import Optional

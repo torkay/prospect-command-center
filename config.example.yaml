@@ -1,4 +1,4 @@
-# Prospect Scraper Configuration
+# Prospect Command Center Configuration
 # Copy to config.yaml and customize
 # Usage: prospect search "plumber" "Sydney" --config config.yaml
 
