@@ -23,7 +23,7 @@ Library Usage:
         print(f"{r.name}: {r.priority_score}")
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "SortedSystems"
 
 # Semantic versioning
@@ -34,7 +34,7 @@ __author__ = "SortedSystems"
 VERSION_INFO = {
     "major": 1,
     "minor": 0,
-    "patch": 0,
+    "patch": 1,
     "release": "stable",  # stable, beta, alpha
 }
 
