@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime
 
-from prospect.web.database import get_db, Campaign, Search
+from prospect.web.database import get_db, Campaign, Search, User
+from prospect.web.auth import get_current_user
 
 router = APIRouter(prefix="/campaigns", tags=["campaigns"])
 
@@ -52,22 +53,27 @@ class CampaignResponse(BaseModel):
 
 @router.get("", response_model=List[CampaignResponse])
 def list_campaigns(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = Query(default=50, le=100),
 ):
-    """List all saved campaigns."""
-    campaigns = db.query(Campaign).order_by(Campaign.created_at.desc()).offset(skip).limit(limit).all()
+    """List all saved campaigns for the current user."""
+    campaigns = db.query(Campaign).filter(
+        Campaign.user_id == current_user.id
+    ).order_by(Campaign.created_at.desc()).offset(skip).limit(limit).all()
     return campaigns
 
 
 @router.post("", response_model=CampaignResponse, status_code=201)
 def create_campaign(
     campaign: CampaignCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Create a new campaign."""
     db_campaign = Campaign(
+        user_id=current_user.id,
         name=campaign.name,
         business_type=campaign.business_type,
         location=campaign.location,
@@ -85,10 +91,14 @@ def create_campaign(
 @router.get("/{campaign_id}", response_model=CampaignResponse)
 def get_campaign(
     campaign_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Get campaign by ID."""
-    campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
+    campaign = db.query(Campaign).filter(
+        Campaign.id == campaign_id,
+        Campaign.user_id == current_user.id
+    ).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
     return campaign
@@ -98,10 +108,14 @@ def get_campaign(
 def update_campaign(
     campaign_id: int,
     update: CampaignUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Update a campaign."""
-    campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
+    campaign = db.query(Campaign).filter(
+        Campaign.id == campaign_id,
+        Campaign.user_id == current_user.id
+    ).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 
@@ -117,10 +131,14 @@ def update_campaign(
 @router.delete("/{campaign_id}", status_code=204)
 def delete_campaign(
     campaign_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Delete a campaign."""
-    campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
+    campaign = db.query(Campaign).filter(
+        Campaign.id == campaign_id,
+        Campaign.user_id == current_user.id
+    ).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
     db.delete(campaign)
@@ -131,6 +149,7 @@ def delete_campaign(
 async def run_campaign(
     campaign_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -138,7 +157,10 @@ async def run_campaign(
 
     Updates campaign metadata and starts a new search job.
     """
-    campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
+    campaign = db.query(Campaign).filter(
+        Campaign.id == campaign_id,
+        Campaign.user_id == current_user.id
+    ).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 
@@ -149,6 +171,7 @@ async def run_campaign(
 
     # Create search record
     search = Search(
+        user_id=current_user.id,
         campaign_id=campaign.id,
         business_type=campaign.business_type,
         location=campaign.location,
@@ -203,11 +226,15 @@ async def run_campaign(
 @router.get("/{campaign_id}/searches")
 def get_campaign_searches(
     campaign_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     limit: int = Query(default=20, le=100),
 ):
     """Get search history for a campaign."""
-    campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
+    campaign = db.query(Campaign).filter(
+        Campaign.id == campaign_id,
+        Campaign.user_id == current_user.id
+    ).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 

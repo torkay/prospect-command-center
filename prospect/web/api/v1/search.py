@@ -11,7 +11,13 @@ from prospect.web.api.v1.models import (
     SearchConfigResponse,
     SearchDepth,
 )
-from prospect.web.database import get_db, Session, SearchConfig
+from prospect.web.database import get_db, Session, SearchConfig, User
+from prospect.web.auth import get_current_user
+from prospect.web.api.v1.usage import (
+    require_search_limit,
+    increment_search_usage,
+    get_usage_summary,
+)
 from prospect.scraper.orchestrator import SearchOrchestrator
 
 router = APIRouter()
@@ -69,6 +75,7 @@ def get_search_config(db: Session, depth: str) -> dict:
 @router.post("/search/estimate", response_model=SearchEstimate)
 def estimate_search(
     request: SearchRequest,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -120,6 +127,7 @@ def list_search_configs(db: Session = Depends(get_db)):
 async def create_search(
     request: SearchRequest,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -129,6 +137,9 @@ async def create_search(
     or connect to WebSocket /ws/jobs/{id} for real-time updates.
     """
     from prospect.web.tasks import run_search_task
+
+    # Check usage limits before starting search
+    require_search_limit(db, current_user)
 
     # Get search config for depth
     search_config = get_search_config(db, request.depth.value)
@@ -140,8 +151,15 @@ async def create_search(
         config={
             **request.model_dump(),
             "search_config": search_config,
+            "user_id": current_user.id,
         },
     )
+
+    # Increment search usage now that job is created
+    increment_search_usage(db, current_user)
+
+    # Get updated usage summary for response
+    usage = get_usage_summary(db, current_user)
 
     background_tasks.add_task(run_search_task, job.id, request)
 
@@ -150,11 +168,16 @@ async def create_search(
         status=job.status.value,
         message="Job created",
         depth=request.depth.value,
+        searches_remaining=usage["searches_remaining"],
     )
 
 
 @router.post("/search/sync")
-async def search_sync(request: SearchRequest):
+async def search_sync(
+    request: SearchRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Synchronous search - blocks until complete.
 
@@ -166,6 +189,9 @@ async def search_sync(request: SearchRequest):
             status_code=400,
             detail="Use async /search for limit > 10"
         )
+
+    # Check usage limits before starting search
+    require_search_limit(db, current_user)
 
     from prospect.api import search_prospects
 
@@ -181,7 +207,14 @@ async def search_sync(request: SearchRequest):
         opportunity_weight=request.scoring.opportunity_weight,
     )
 
+    # Increment search usage after successful search
+    increment_search_usage(db, current_user)
+
+    # Get updated usage summary for response
+    usage = get_usage_summary(db, current_user)
+
     return {
         "count": len(results),
-        "results": [r.to_dict() for r in results]
+        "results": [r.to_dict() for r in results],
+        "searches_remaining": usage["searches_remaining"],
     }

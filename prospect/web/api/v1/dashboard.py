@@ -6,13 +6,17 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta, timezone
 
-from prospect.web.database import get_db, Search, Prospect, Campaign
+from prospect.web.database import get_db, Search, Prospect, Campaign, User
+from prospect.web.auth import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("/summary")
-def get_dashboard_summary(db: Session = Depends(get_db)):
+def get_dashboard_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Dashboard summary stats.
 
@@ -22,42 +26,64 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     - Recent activity
     - Top campaigns
     """
-    # Total counts
-    total_prospects = db.query(Prospect).count()
-    total_searches = db.query(Search).count()
-    total_campaigns = db.query(Campaign).count()
+    # Total counts (filtered by user)
+    total_prospects = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id
+    ).count()
+    total_searches = db.query(Search).filter(
+        Search.user_id == current_user.id
+    ).count()
+    total_campaigns = db.query(Campaign).filter(
+        Campaign.user_id == current_user.id
+    ).count()
 
-    # Pipeline breakdown
+    # Pipeline breakdown (filtered by user)
     pipeline = db.query(
         Prospect.status,
         func.count(Prospect.id)
+    ).join(Search).filter(
+        Search.user_id == current_user.id
     ).group_by(Prospect.status).all()
 
-    # Recent searches (last 7 days)
+    # Recent searches (last 7 days, filtered by user)
     week_ago = datetime.now(timezone.utc) - timedelta(days=7)
     recent_searches = db.query(Search).filter(
+        Search.user_id == current_user.id,
         Search.created_at >= week_ago
     ).count()
 
-    # Prospects found this week
-    recent_prospects = db.query(Prospect).filter(
+    # Prospects found this week (filtered by user)
+    recent_prospects = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
         Prospect.first_seen_at >= week_ago
     ).count()
 
-    # Top campaigns by run count
-    top_campaigns = db.query(Campaign).order_by(
+    # Top campaigns by run count (filtered by user)
+    top_campaigns = db.query(Campaign).filter(
+        Campaign.user_id == current_user.id
+    ).order_by(
         Campaign.run_count.desc()
     ).limit(5).all()
 
-    # Score distributions
-    high_priority = db.query(Prospect).filter(
+    # Score distributions (filtered by user)
+    high_priority = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
         Prospect.priority_score >= 60
     ).count()
 
-    # Source breakdown
-    ads_count = db.query(Prospect).filter(Prospect.found_in_ads == True).count()
-    maps_count = db.query(Prospect).filter(Prospect.found_in_maps == True).count()
-    organic_count = db.query(Prospect).filter(Prospect.found_in_organic == True).count()
+    # Source breakdown (filtered by user)
+    ads_count = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
+        Prospect.found_in_ads == True
+    ).count()
+    maps_count = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
+        Prospect.found_in_maps == True
+    ).count()
+    organic_count = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
+        Prospect.found_in_organic == True
+    ).count()
 
     return {
         "totals": {
@@ -114,12 +140,15 @@ def get_relative_time(dt: datetime) -> str:
 
 @router.get("/activity")
 def get_recent_activity(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     limit: int = 20,
 ):
     """Get recent activity feed - deduplicated."""
-    # Fetch extra searches to account for deduplication
-    recent_searches = db.query(Search).order_by(
+    # Fetch extra searches to account for deduplication (filtered by user)
+    recent_searches = db.query(Search).filter(
+        Search.user_id == current_user.id
+    ).order_by(
         Search.created_at.desc()
     ).limit(limit * 2).all()
 
@@ -153,7 +182,10 @@ def get_recent_activity(
 
 
 @router.get("/insights")
-def get_insights(db: Session = Depends(get_db)):
+def get_insights(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Generate actionable insights with proper grammar.
 
@@ -166,8 +198,9 @@ def get_insights(db: Session = Depends(get_db)):
     """
     insights = []
 
-    # High priority not contacted
-    high_priority_new = db.query(Prospect).filter(
+    # High priority not contacted (filtered by user)
+    high_priority_new = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
         Prospect.priority_score >= 60,
         Prospect.status == "new"
     ).count()
@@ -189,8 +222,9 @@ def get_insights(db: Session = Depends(get_db)):
             "action_filters": {"status": "new", "min_priority": "60"},
         })
 
-    # Follow-ups due
-    follow_ups_due = db.query(Prospect).filter(
+    # Follow-ups due (filtered by user)
+    follow_ups_due = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
         Prospect.follow_up_at <= datetime.now(timezone.utc),
         Prospect.status.notin_(["won", "lost", "skipped"])
     ).count()
@@ -208,8 +242,9 @@ def get_insights(db: Session = Depends(get_db)):
             "action_filters": {"has_follow_up": "true"},
         })
 
-    # Prospects without email but high fit
-    no_email_high_fit = db.query(Prospect).filter(
+    # Prospects without email but high fit (filtered by user)
+    no_email_high_fit = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
         Prospect.fit_score >= 70,
         (Prospect.emails.is_(None)) | (Prospect.emails == "")
     ).count()
@@ -226,10 +261,14 @@ def get_insights(db: Session = Depends(get_db)):
             "description": f"Consider finding emails manually for {these_word}.",
         })
 
-    # No campaigns yet
-    campaign_count = db.query(Campaign).count()
+    # No campaigns yet (filtered by user)
+    campaign_count = db.query(Campaign).filter(
+        Campaign.user_id == current_user.id
+    ).count()
     if campaign_count == 0:
-        search_count = db.query(Search).count()
+        search_count = db.query(Search).filter(
+            Search.user_id == current_user.id
+        ).count()
         if search_count > 0:
             insights.append({
                 "type": "tip",
@@ -239,8 +278,9 @@ def get_insights(db: Session = Depends(get_db)):
                 "description": "Create campaigns for searches you run regularly. One-click rerun.",
             })
 
-    # Qualified but not contacted
-    qualified_not_contacted = db.query(Prospect).filter(
+    # Qualified but not contacted (filtered by user)
+    qualified_not_contacted = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
         Prospect.status == "qualified",
         Prospect.contacted_at.is_(None)
     ).count()
@@ -263,12 +303,17 @@ def get_insights(db: Session = Depends(get_db)):
 
 
 @router.get("/scores")
-def get_score_distribution(db: Session = Depends(get_db)):
+def get_score_distribution(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get score distribution for charts."""
     prospects = db.query(
         Prospect.fit_score,
         Prospect.opportunity_score,
         Prospect.priority_score
+    ).join(Search).filter(
+        Search.user_id == current_user.id
     ).all()
 
     # Create buckets for distribution
@@ -302,27 +347,30 @@ def get_score_distribution(db: Session = Depends(get_db)):
 
 @router.get("/timeline")
 def get_search_timeline(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     days: int = 30,
 ):
     """Get search/prospect counts over time."""
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-    # Get searches per day
+    # Get searches per day (filtered by user)
     searches = db.query(
         func.date(Search.created_at).label("date"),
         func.count(Search.id).label("count")
     ).filter(
+        Search.user_id == current_user.id,
         Search.created_at >= start_date
     ).group_by(
         func.date(Search.created_at)
     ).all()
 
-    # Get prospects per day
+    # Get prospects per day (filtered by user)
     prospects = db.query(
         func.date(Prospect.first_seen_at).label("date"),
         func.count(Prospect.id).label("count")
-    ).filter(
+    ).join(Search).filter(
+        Search.user_id == current_user.id,
         Prospect.first_seen_at >= start_date
     ).group_by(
         func.date(Prospect.first_seen_at)

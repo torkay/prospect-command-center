@@ -215,6 +215,70 @@ def get_tier_limits(tier: str) -> dict:
     return TIER_LIMITS.get(tier, TIER_LIMITS["scout"])
 
 
+def get_usage_summary(db: Session, user: User) -> dict:
+    """
+    Get a summary of current usage for API responses.
+
+    Returns dict with searches_used, searches_limit, searches_remaining,
+    enrichments_used, enrichments_limit, enrichments_remaining.
+    """
+    record = get_or_create_usage_record(db, user)
+
+    return {
+        "searches_used": record.searches_used,
+        "searches_limit": user.searches_limit,
+        "searches_remaining": max(0, user.searches_limit - record.searches_used),
+        "enrichments_used": record.enrichments_used,
+        "enrichments_limit": user.enrichments_limit,
+        "enrichments_remaining": max(0, user.enrichments_limit - record.enrichments_used),
+    }
+
+
+def require_search_limit(db: Session, user: User) -> None:
+    """
+    Check if user can perform a search. Raises HTTPException if limit exceeded.
+
+    Use this in API endpoints before creating a search.
+    """
+    record = get_or_create_usage_record(db, user)
+
+    if record.searches_used >= user.searches_limit:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "error": "Search limit exceeded",
+                "message": f"You've used all {user.searches_limit} searches this month. Upgrade your plan for more.",
+                "searches_used": record.searches_used,
+                "searches_limit": user.searches_limit,
+                "upgrade_url": "/billing/upgrade",
+            }
+        )
+
+
+def require_enrichment_limit(db: Session, user: User, count: int = 1) -> None:
+    """
+    Check if user can perform enrichments. Raises HTTPException if limit exceeded.
+
+    Use this in API endpoints before running enrichment.
+    """
+    record = get_or_create_usage_record(db, user)
+
+    if (record.enrichments_used + count) > user.enrichments_limit:
+        remaining = max(0, user.enrichments_limit - record.enrichments_used)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "error": "Enrichment limit exceeded",
+                "message": f"You've used {record.enrichments_used} of {user.enrichments_limit} enrichments this month. Upgrade your plan for more.",
+                "enrichments_used": record.enrichments_used,
+                "enrichments_limit": user.enrichments_limit,
+                "enrichments_remaining": remaining,
+                "requested": count,
+                "upgrade_url": "/billing/upgrade",
+            }
+        )
+
+
 def update_user_tier(db: Session, user: User, tier: str) -> User:
     """Update user's tier and limits."""
     limits = get_tier_limits(tier)

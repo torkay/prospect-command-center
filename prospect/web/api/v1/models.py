@@ -64,6 +64,7 @@ class JobResponse(BaseModel):
     status: str
     message: str
     depth: Optional[str] = None
+    searches_remaining: Optional[int] = None
 
 
 class SearchEstimate(BaseModel):

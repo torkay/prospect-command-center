@@ -6,7 +6,8 @@ from datetime import datetime
 
 from prospect.web.state import job_manager, JobStatus
 from prospect.web.api.v1.models import SearchRequest
-from prospect.web.database import SessionLocal, Search, save_prospects_from_results
+from prospect.web.database import SessionLocal, Search, User, save_prospects_from_results
+from prospect.web.api.v1.usage import increment_enrichment_usage
 
 logger = logging.getLogger(__name__)
 
@@ -259,6 +260,16 @@ async def run_search_task(job_id: str, request: SearchRequest):
             if prospects and search_id:
                 save_prospects_from_results(db, search_id, prospects)
                 logger.info(f"Saved {len(prospects)} prospects to database for search {search_id}")
+
+            # Increment enrichment usage if enrichment was performed
+            if not request.skip_enrichment and prospects:
+                user_id = job.config.get("user_id") if job.config else None
+                if user_id:
+                    user = db.query(User).filter(User.id == user_id).first()
+                    if user:
+                        enrichment_count = len(prospects)
+                        increment_enrichment_usage(db, user, enrichment_count)
+                        logger.info(f"Incremented enrichment usage by {enrichment_count} for user {user_id}")
         except Exception as e:
             logger.exception(f"Failed to save search results to database: {e}")
         finally:

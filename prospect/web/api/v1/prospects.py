@@ -7,7 +7,8 @@ from sqlalchemy import func, or_
 from pydantic import BaseModel
 from datetime import datetime
 
-from prospect.web.database import get_db, Prospect
+from prospect.web.database import get_db, Prospect, Search, User
+from prospect.web.auth import get_current_user
 
 router = APIRouter(prefix="/prospects", tags=["prospects"])
 
@@ -63,6 +64,7 @@ class ProspectStats(BaseModel):
 
 @router.get("", response_model=List[ProspectResponse])
 def list_prospects(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     search_id: Optional[int] = None,
     status: Optional[str] = None,
@@ -83,7 +85,8 @@ def list_prospects(
 
     Supports workflow management by filtering on status, tags, etc.
     """
-    query = db.query(Prospect)
+    # Filter prospects by user through the search relationship
+    query = db.query(Prospect).join(Search).filter(Search.user_id == current_user.id)
 
     # Filters
     if search_id:
@@ -150,11 +153,13 @@ def list_prospects(
 
 @router.get("/stats", response_model=ProspectStats)
 def get_prospect_stats(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     search_id: Optional[int] = None,
 ):
     """Get aggregate stats for prospects - returns all status counts explicitly."""
-    base_query = db.query(Prospect)
+    # Filter by user through search relationship
+    base_query = db.query(Prospect).join(Search).filter(Search.user_id == current_user.id)
     if search_id:
         base_query = base_query.filter(Prospect.search_id == search_id)
 
@@ -164,7 +169,10 @@ def get_prospect_stats(
     all_statuses = ['new', 'qualified', 'contacted', 'meeting', 'won', 'lost', 'skipped']
     status_breakdown = {}
     for status in all_statuses:
-        count_query = db.query(Prospect).filter(Prospect.status == status)
+        count_query = db.query(Prospect).join(Search).filter(
+            Search.user_id == current_user.id,
+            Prospect.status == status
+        )
         if search_id:
             count_query = count_query.filter(Prospect.search_id == search_id)
         status_breakdown[status] = count_query.count()
@@ -181,12 +189,12 @@ def get_prospect_stats(
             contact_rate=0,
         )
 
-    # Score averages
+    # Score averages (need to join with Search for user filtering)
     avg_query = db.query(
         func.avg(Prospect.fit_score),
         func.avg(Prospect.opportunity_score),
         func.avg(Prospect.priority_score)
-    )
+    ).join(Search).filter(Search.user_id == current_user.id)
     if search_id:
         avg_query = avg_query.filter(Prospect.search_id == search_id)
     averages = avg_query.first()
@@ -195,11 +203,23 @@ def get_prospect_stats(
     avg_opp = averages[1] or 0
     avg_pri = averages[2] or 0
 
-    # With contact info
-    email_query = base_query.filter(Prospect.emails.isnot(None), Prospect.emails != "")
+    # With contact info (requery with user filter)
+    email_query = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
+        Prospect.emails.isnot(None),
+        Prospect.emails != ""
+    )
+    if search_id:
+        email_query = email_query.filter(Prospect.search_id == search_id)
     with_email = email_query.count()
 
-    phone_query = base_query.filter(Prospect.phone.isnot(None), Prospect.phone != "")
+    phone_query = db.query(Prospect).join(Search).filter(
+        Search.user_id == current_user.id,
+        Prospect.phone.isnot(None),
+        Prospect.phone != ""
+    )
+    if search_id:
+        phone_query = phone_query.filter(Prospect.search_id == search_id)
     with_phone = phone_query.count()
 
     return ProspectStats(
@@ -217,10 +237,14 @@ def get_prospect_stats(
 @router.get("/{prospect_id}", response_model=ProspectResponse)
 def get_prospect(
     prospect_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Get a single prospect by ID."""
-    prospect = db.query(Prospect).filter(Prospect.id == prospect_id).first()
+    prospect = db.query(Prospect).join(Search).filter(
+        Prospect.id == prospect_id,
+        Search.user_id == current_user.id
+    ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
 
@@ -255,6 +279,7 @@ def get_prospect(
 def update_prospect(
     prospect_id: int,
     update: ProspectUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -266,7 +291,10 @@ def update_prospect(
     - Setting follow-up reminders
     - Tagging
     """
-    prospect = db.query(Prospect).filter(Prospect.id == prospect_id).first()
+    prospect = db.query(Prospect).join(Search).filter(
+        Prospect.id == prospect_id,
+        Search.user_id == current_user.id
+    ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
 
@@ -317,10 +345,14 @@ def update_prospect(
 @router.post("/{prospect_id}/skip", response_model=ProspectResponse)
 def skip_prospect(
     prospect_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Quick action to skip a prospect."""
-    prospect = db.query(Prospect).filter(Prospect.id == prospect_id).first()
+    prospect = db.query(Prospect).join(Search).filter(
+        Prospect.id == prospect_id,
+        Search.user_id == current_user.id
+    ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
 
@@ -365,12 +397,16 @@ class BulkUpdateRequest(BaseModel):
 @router.post("/bulk-update")
 def bulk_update_prospects(
     request: BulkUpdateRequest,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Bulk update multiple prospects."""
     updated = 0
     for pid in request.prospect_ids:
-        prospect = db.query(Prospect).filter(Prospect.id == pid).first()
+        prospect = db.query(Prospect).join(Search).filter(
+            Prospect.id == pid,
+            Search.user_id == current_user.id
+        ).first()
         if prospect:
             if request.status:
                 prospect.status = request.status
@@ -387,10 +423,14 @@ def bulk_update_prospects(
 @router.delete("/{prospect_id}", status_code=204)
 def delete_prospect(
     prospect_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Delete a prospect."""
-    prospect = db.query(Prospect).filter(Prospect.id == prospect_id).first()
+    prospect = db.query(Prospect).join(Search).filter(
+        Prospect.id == prospect_id,
+        Search.user_id == current_user.id
+    ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
     db.delete(prospect)
