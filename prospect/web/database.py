@@ -49,6 +49,69 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+class User(Base):
+    """User account for multi-tenant access."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=True)
+    company = Column(String(255), nullable=True)
+
+    # Subscription
+    tier = Column(String(50), default="scout")  # scout, hunter, command
+    stripe_customer_id = Column(String(255), nullable=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
+    subscription_status = Column(String(50), default="none")  # none, active, past_due, canceled
+
+    # Usage limits (set based on tier)
+    searches_limit = Column(Integer, default=100)
+    enrichments_limit = Column(Integer, default=50)
+
+    # Status
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    searches = relationship("Search", back_populates="user")
+    campaigns = relationship("Campaign", back_populates="user")
+    usage_records = relationship("UsageRecord", back_populates="user")
+
+    def __repr__(self):
+        return f"<User {self.email}>"
+
+
+class UsageRecord(Base):
+    """Monthly usage tracking per user."""
+    __tablename__ = "usage_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    # Period (monthly)
+    period_start = Column(DateTime, nullable=False)
+    period_end = Column(DateTime, nullable=False)
+
+    # Usage counts
+    searches_used = Column(Integer, default=0)
+    enrichments_used = Column(Integer, default=0)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="usage_records")
+
+    def __repr__(self):
+        return f"<UsageRecord user={self.user_id} period={self.period_start}>"
+
+
 class SearchConfig(Base):
     """
     Search depth configuration.
@@ -89,6 +152,7 @@ class Campaign(Base):
     __tablename__ = "campaigns"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     business_type = Column(String(255), nullable=False)
     location = Column(String(255), nullable=False)
@@ -105,6 +169,7 @@ class Campaign(Base):
     icon = Column(String(50), default="search")
 
     # Relationships
+    user = relationship("User", back_populates="campaigns")
     searches = relationship("Search", back_populates="campaign")
 
     def __repr__(self):
@@ -116,6 +181,7 @@ class Search(Base):
     __tablename__ = "searches"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=True)
 
     # Search parameters
@@ -153,6 +219,7 @@ class Search(Base):
     results_from_ads = Column(Integer, default=0)
 
     # Relationships
+    user = relationship("User", back_populates="searches")
     campaign = relationship("Campaign", back_populates="searches")
     prospects = relationship("Prospect", back_populates="search", cascade="all, delete-orphan")
 

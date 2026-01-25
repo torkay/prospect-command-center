@@ -2,10 +2,17 @@
 
 from fastapi import APIRouter
 
-from prospect.web.api.v1 import search, jobs, config, campaigns, prospects, dashboard
+from prospect.web.api.v1 import auth, usage, search, jobs, config, campaigns, prospects, dashboard
 
 router = APIRouter(prefix="/api/v1")
 
+# Auth routes (no auth required)
+router.include_router(auth.router)
+
+# Usage tracking
+router.include_router(usage.router)
+
+# Protected routes
 router.include_router(search.router, tags=["search"])
 router.include_router(jobs.router, tags=["jobs"])
 router.include_router(config.router, tags=["config"])
