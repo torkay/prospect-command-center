@@ -1539,14 +1539,278 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: var(--spacing-xl);
+            padding: var(--spacing-xl) var(--spacing-md);
             text-align: center;
             color: var(--text-muted);
+            min-height: 200px;
+        }
+
+        .empty-state-icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
         }
 
         .empty-state p {
             margin: 0 0 var(--spacing-md);
-            font-size: 15px;
+            font-size: 14px;
+            max-width: 320px;
+            line-height: 1.5;
+        }
+
+        .empty-state .btn-primary {
+            margin-top: var(--spacing-sm);
+        }
+
+        /* ============================================
+           SCORE TOOLTIPS
+           ============================================ */
+
+        .score-tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .score-tooltip::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: normal;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s, visibility 0.15s;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .score-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: var(--border);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s, visibility 0.15s;
+            z-index: 100;
+        }
+
+        .score-tooltip:hover::before,
+        .score-tooltip:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Touch device support for tooltips */
+        @media (hover: none) {
+            .score-tooltip:active::before,
+            .score-tooltip:active::after {
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+
+        /* ============================================
+           LOADING STATES
+           ============================================ */
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-spinner-lg {
+            width: 40px;
+            height: 40px;
+            border-width: 3px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 18px;
+            height: 18px;
+            margin: -9px 0 0 -9px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Page loading overlay */
+        .page-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+            min-height: 200px;
+        }
+
+        .page-loading-text {
+            margin-top: var(--spacing-md);
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           ERROR STATES
+           ============================================ */
+
+        .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+            text-align: center;
+            min-height: 200px;
+        }
+
+        .error-state-icon {
+            width: 48px;
+            height: 48px;
+            color: #f87171;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .error-state-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f87171;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .error-state-message {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-md);
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        .error-state-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* ============================================
+           TABLET TABLE SCROLLING (640px - 1024px)
+           ============================================ */
+
+        @media (min-width: 640px) and (max-width: 1024px) {
+            .data-table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .data-table {
+                min-width: 800px;
+            }
+
+            /* Add scroll hint shadow */
+            .data-table-wrapper::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 30px;
+                height: 100%;
+                background: linear-gradient(to left, var(--bg-secondary), transparent);
+                pointer-events: none;
+                opacity: 0.8;
+            }
+        }
+
+        /* ============================================
+           MOBILE HORIZONTAL OVERFLOW PREVENTION
+           ============================================ */
+
+        @media (max-width: 640px) {
+            body {
+                overflow-x: hidden;
+            }
+
+            .main-content {
+                overflow-x: hidden;
+            }
+
+            /* Ensure all content containers constrain their children */
+            .card,
+            .prospect-card,
+            .detail-section {
+                max-width: 100%;
+                overflow: hidden;
+            }
+
+            /* Long text truncation */
+            .prospect-card-title,
+            .prospect-card-domain,
+            .mono {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
         }
 
         /* ============================================
@@ -2058,7 +2322,7 @@
         // ============================================
         async function checkApiStatus() {
             try {
-                const res = await fetch(`${API}/health`);
+                const res = await authFetch(`${API}/health`);
                 const data = await res.json();
 
                 const statusEl = document.getElementById('api-status');
@@ -2160,9 +2424,9 @@
 
             try {
                 const [summary, insights, activity] = await Promise.all([
-                    fetch(`${API}/dashboard/summary`).then(r => r.json()),
-                    fetch(`${API}/dashboard/insights`).then(r => r.json()),
-                    fetch(`${API}/dashboard/activity`).then(r => r.json()),
+                    authFetch(`${API}/dashboard/summary`).then(r => r.json()),
+                    authFetch(`${API}/dashboard/insights`).then(r => r.json()),
+                    authFetch(`${API}/dashboard/activity`).then(r => r.json()),
                 ]);
 
                 // Update sidebar counts
@@ -2285,12 +2549,15 @@
                 document.getElementById('quick-search-form')?.addEventListener('submit', handleQuickSearch);
 
             } catch (e) {
-                document.getElementById('page-content').innerHTML = `
-                    <div class="text-center py-12">
-                        <div class="text-red-400 mb-2">Failed to load dashboard</div>
-                        <div class="text-sm text-zinc-500">${e.message}</div>
-                    </div>
-                `;
+                document.getElementById('page-content').innerHTML = renderErrorState(
+                    'Dashboard Unavailable',
+                    'We couldn\'t load your dashboard data. This might be a temporary connection issue.',
+                    [
+                        { label: 'Try Again', onClick: 'loadDashboard()', primary: true },
+                        { label: 'Run a Search Instead', onClick: "navigateTo('search')" }
+                    ]
+                );
+                lucide.createIcons();
             }
         }
 
@@ -2873,7 +3140,7 @@
             submitBtn.disabled = true;
 
             try {
-                const res = await fetch(`${API}/search`, {
+                const res = await authFetch(`${API}/search`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(request)
@@ -2886,7 +3153,7 @@
                 connectSearchWebSocket(data.id);
 
             } catch (e) {
-                showToast('Search failed: ' + e.message, 'error');
+                showToast('We couldn\'t complete your search. Please check your connection and try again.', 'error');
                 document.getElementById('search-progress').classList.add('hidden');
                 submitBtn.disabled = false;
             }
@@ -2908,7 +3175,7 @@
                     ws.close();
                     navigateTo('prospects');
                 } else if (data.type === 'error') {
-                    showToast('Error: ' + data.message, 'error');
+                    showToast('Search error: ' + (data.message || 'Please try again.'), 'error');
                     document.getElementById('search-progress').classList.add('hidden');
                     document.getElementById('search-submit-btn').disabled = false;
                     ws.close();
@@ -2924,7 +3191,7 @@
         async function pollJobStatus(jobId) {
             const poll = async () => {
                 try {
-                    const res = await fetch(`${API}/jobs/${jobId}`);
+                    const res = await authFetch(`${API}/jobs/${jobId}`);
                     const data = await res.json();
 
                     const pct = data.progress_total > 0 ? (data.progress / data.progress_total) * 100 : 0;
@@ -2935,7 +3202,7 @@
                         showToast(`Found ${data.results?.length || 0} prospects!`, 'success');
                         navigateTo('prospects');
                     } else if (data.status === 'error') {
-                        showToast('Error: ' + data.error, 'error');
+                        showToast('Search error: ' + (data.error || 'Please try again.'), 'error');
                         document.getElementById('search-progress').classList.add('hidden');
                         document.getElementById('search-submit-btn').disabled = false;
                     } else {
@@ -2959,8 +3226,8 @@
 
             try {
                 const [prospects, stats] = await Promise.all([
-                    fetch(`${API}/prospects?${params}`).then(r => r.json()),
-                    fetch(`${API}/prospects/stats`).then(r => r.json()),
+                    authFetch(`${API}/prospects?${params}`).then(r => r.json()),
+                    authFetch(`${API}/prospects/stats`).then(r => r.json()),
                 ]);
 
                 document.getElementById('page-content').innerHTML = `
@@ -3021,9 +3288,9 @@
                                     <th class="w-8"><input type="checkbox" id="select-all"></th>
                                     <th>Business</th>
                                     <th>Contact</th>
-                                    <th>Fit</th>
-                                    <th>Opp</th>
-                                    <th>Priority</th>
+                                    <th class="score-tooltip" data-tooltip="How reachable is this prospect? Based on contact info availability.">Fit</th>
+                                    <th class="score-tooltip" data-tooltip="How much do they need marketing help? Based on missing analytics, old CMS, etc.">Opp</th>
+                                    <th class="score-tooltip" data-tooltip="Combined score - higher means better prospect to contact.">Priority</th>
                                     <th>Status</th>
                                     <th>Notes</th>
                                     <th class="w-24"></th>
@@ -3070,12 +3337,15 @@
                 });
 
             } catch (e) {
-                document.getElementById('page-content').innerHTML = `
-                    <div class="text-center py-12">
-                        <div class="text-red-400 mb-2">Failed to load prospects</div>
-                        <div class="text-sm text-zinc-500">${e.message}</div>
-                    </div>
-                `;
+                document.getElementById('page-content').innerHTML = renderErrorState(
+                    'Couldn\'t Load Prospects',
+                    'We had trouble fetching your prospect list. Please check your connection and try again.',
+                    [
+                        { label: 'Try Again', onClick: 'loadProspectsPage()', primary: true },
+                        { label: 'Go to Dashboard', onClick: "navigateTo('dashboard')" }
+                    ]
+                );
+                lucide.createIcons();
             }
         }
 
@@ -3173,7 +3443,9 @@
 
         function renderProspectsRows(prospects) {
             if (!prospects.length) {
-                return `<tr><td colspan="9" class="text-center py-12 text-zinc-500">No prospects found. Run a search to find some!</td></tr>`;
+                const hasFilters = Object.keys(currentFilters).length > 0;
+                const emptyType = hasFilters ? 'filtered' : 'prospects';
+                return \`<tr><td colspan="9">\${renderEmptyState(emptyType)}</td></tr>\`;
             }
 
             return prospects.map(p => {
@@ -3208,9 +3480,9 @@
                             </div>
                         ` : ''}
                     </td>
-                    <td><span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(p.fit_score)}">${p.fit_score}</span></td>
-                    <td><span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(p.opportunity_score)}">${p.opportunity_score}</span></td>
-                    <td><span class="px-2 py-1 rounded text-xs font-mono font-bold ${scoreClass(p.priority_score)}">${Math.round(p.priority_score)}</span></td>
+                    <td><span class="px-2 py-1 rounded text-xs font-mono score-tooltip ${scoreClass(p.fit_score)}" data-tooltip="Fit: Contact info availability">${p.fit_score}</span></td>
+                    <td><span class="px-2 py-1 rounded text-xs font-mono score-tooltip ${scoreClass(p.opportunity_score)}" data-tooltip="Opportunity: Marketing needs">${p.opportunity_score}</span></td>
+                    <td><span class="px-2 py-1 rounded text-xs font-mono font-bold score-tooltip ${scoreClass(p.priority_score)}" data-tooltip="Priority: Combined score">${Math.round(p.priority_score)}</span></td>
                     <td onclick="event.stopPropagation();">
                         <select class="status-select-styled status-${p.status} status-select" data-id="${p.id}">
                             <option value="new" ${p.status === 'new' ? 'selected' : ''}>● New</option>
@@ -3239,18 +3511,103 @@
         // ============================================
         function renderProspectCards(prospects) {
             if (!prospects.length) {
-                return `
-                    <div class="empty-state">
-                        <i data-lucide="users" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
-                        <p>No prospects yet</p>
-                        <button class="btn-primary" onclick="navigateTo('search')">
-                            Run a Search
-                        </button>
-                    </div>
-                `;
+                return renderEmptyState('prospects');
             }
 
             return prospects.map(p => renderProspectCard(p)).join('');
+        }
+
+        // ============================================
+        // Empty State Helper
+        // ============================================
+        function renderEmptyState(type, searchQuery = null) {
+            const states = {
+                prospects: {
+                    icon: 'users',
+                    title: 'No Prospects Yet',
+                    message: 'Start by running a search to discover businesses that could use your marketing services.',
+                    action: { label: 'Run Your First Search', onClick: "navigateTo('search')" }
+                },
+                campaigns: {
+                    icon: 'folder',
+                    title: 'No Campaigns Saved',
+                    message: 'Campaigns let you save search criteria and run them again later. Create one from any search.',
+                    action: { label: 'Create a Campaign', onClick: "showCreateCampaignModal()" }
+                },
+                search_results: {
+                    icon: 'search-x',
+                    title: 'No Results Found',
+                    message: searchQuery
+                        ? \`We couldn't find any businesses matching "\${searchQuery}". Try adjusting your search terms or location.\`
+                        : 'No businesses matched your search criteria. Try different keywords or expand your location.',
+                    action: { label: 'Try a New Search', onClick: "navigateTo('search')" }
+                },
+                activity: {
+                    icon: 'activity',
+                    title: 'No Recent Activity',
+                    message: 'Your search history and prospect interactions will appear here once you get started.',
+                    action: { label: 'Get Started', onClick: "navigateTo('search')" }
+                },
+                filtered: {
+                    icon: 'filter-x',
+                    title: 'No Matching Prospects',
+                    message: 'No prospects match your current filters. Try adjusting the status or clearing filters.',
+                    action: { label: 'Clear Filters', onClick: "clearFilters()" }
+                }
+            };
+
+            const state = states[type] || states.prospects;
+
+            return \`
+                <div class="empty-state">
+                    <i data-lucide="\${state.icon}" class="empty-state-icon"></i>
+                    <div class="empty-state-title">\${state.title}</div>
+                    <p>\${state.message}</p>
+                    \${state.action ? \`
+                        <button class="btn-primary" onclick="\${state.action.onClick}">
+                            <i data-lucide="\${state.icon === 'search-x' ? 'search' : 'plus'}" class="w-4 h-4"></i>
+                            \${state.action.label}
+                        </button>
+                    \` : ''}
+                </div>
+            \`;
+        }
+
+        function clearFilters() {
+            currentFilters = {};
+            loadProspectsPage();
+        }
+
+        // ============================================
+        // Error State Helper
+        // ============================================
+        function renderErrorState(title, message, actions = []) {
+            return \`
+                <div class="error-state">
+                    <i data-lucide="alert-circle" class="error-state-icon"></i>
+                    <div class="error-state-title">\${title}</div>
+                    <div class="error-state-message">\${message}</div>
+                    <div class="error-state-actions">
+                        \${actions.map(action => \`
+                            <button class="\${action.primary ? 'btn-primary' : 'btn-secondary'}" onclick="\${action.onClick}">
+                                \${action.label}
+                            </button>
+                        \`).join('')}
+                    </div>
+                </div>
+            \`;
+        }
+
+        // ============================================
+        // Loading State Helper
+        // ============================================
+        function renderLoadingState(message = 'Loading...') {
+            return \`
+                <div class="page-loading">
+                    <div class="loading-spinner loading-spinner-lg"></div>
+                    <div class="page-loading-text">\${message}</div>
+                </div>
+            \`;
         }
 
         function renderProspectCard(p) {
@@ -3280,7 +3637,7 @@
                             ` : ''}
                         </div>
                         <div class="prospect-card-scores">
-                            <span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(p.priority_score)}">${Math.round(p.priority_score)}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono score-tooltip ${scoreClass(p.priority_score)}" data-tooltip="Priority Score">P:${Math.round(p.priority_score)}</span>
                         </div>
                     </div>
 
@@ -3306,8 +3663,8 @@
                             ${statusIcons[p.status] || '●'} ${p.status}
                         </span>
                         <div style="display: flex; gap: 8px;">
-                            <span class="px-2 py-1 rounded text-xs font-mono score-xs ${scoreClass(p.fit_score)}">F:${p.fit_score}</span>
-                            <span class="px-2 py-1 rounded text-xs font-mono score-xs ${scoreClass(p.opportunity_score)}">O:${p.opportunity_score}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono score-xs score-tooltip ${scoreClass(p.fit_score)}" data-tooltip="Fit: Contact availability">F:${p.fit_score}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono score-xs score-tooltip ${scoreClass(p.opportunity_score)}" data-tooltip="Opp: Marketing needs">O:${p.opportunity_score}</span>
                         </div>
                     </div>
                 </div>
@@ -3331,7 +3688,7 @@
 
         async function updateProspectStatus(id, status) {
             try {
-                await fetch(`${API}/prospects/${id}`, {
+                await authFetch(`${API}/prospects/${id}`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ status })
@@ -3340,19 +3697,19 @@
                 // Refresh sidebar counts
                 loadDashboardCounts();
             } catch (e) {
-                showToast('Failed to update', 'error');
+                showToast('Couldn\'t update the status. Please try again.', 'error');
             }
         }
 
         async function skipProspect(id) {
-            await fetch(`${API}/prospects/${id}/skip`, { method: 'POST' });
+            await authFetch(`${API}/prospects/${id}/skip`, { method: 'POST' });
             loadProspectsPage();
         }
 
         async function loadDashboardCounts() {
             try {
                 // Use the stats endpoint for accurate counts
-                const stats = await fetch(`${API}/prospects/stats`).then(r => r.json());
+                const stats = await authFetch(`${API}/prospects/stats`).then(r => r.json());
                 const hasProspects = (stats.total || 0) > 0;
 
                 document.getElementById('prospect-count').textContent = stats.total || 0;
@@ -3375,7 +3732,7 @@
         // ============================================
         async function openDetailPanel(id) {
             try {
-                const res = await fetch(`${API}/prospects/${id}`);
+                const res = await authFetch(`${API}/prospects/${id}`);
                 if (!res.ok) throw new Error('Failed to load prospect');
 
                 const prospect = await res.json();
@@ -3387,9 +3744,9 @@
                     <!-- Header with scores -->
                     <div class="detail-section">
                         <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
-                            <span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(prospect.fit_score)}">Fit: ${prospect.fit_score}</span>
-                            <span class="px-2 py-1 rounded text-xs font-mono ${scoreClass(prospect.opportunity_score)}">Opp: ${prospect.opportunity_score}</span>
-                            <span class="px-2 py-1 rounded text-xs font-mono font-bold ${scoreClass(prospect.priority_score)}">Priority: ${Math.round(prospect.priority_score)}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono score-tooltip ${scoreClass(prospect.fit_score)}" data-tooltip="How reachable is this prospect? Based on contact info availability.">Fit: ${prospect.fit_score}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono score-tooltip ${scoreClass(prospect.opportunity_score)}" data-tooltip="How much do they need marketing help? Based on missing analytics, old CMS, etc.">Opp: ${prospect.opportunity_score}</span>
+                            <span class="px-2 py-1 rounded text-xs font-mono font-bold score-tooltip ${scoreClass(prospect.priority_score)}" data-tooltip="Combined score - higher means better prospect to contact.">Priority: ${Math.round(prospect.priority_score)}</span>
                         </div>
 
                         ${prospect.domain ? `
@@ -3549,7 +3906,7 @@
                 lucide.createIcons();
 
             } catch (e) {
-                showToast('Failed to load prospect details', 'error');
+                showToast('Couldn\'t load prospect details. Please try again.', 'error');
                 console.error(e);
             }
         }
@@ -3560,14 +3917,14 @@
 
         async function saveUserNotes(id, notes) {
             try {
-                await fetch(`${API}/prospects/${id}`, {
+                await authFetch(`${API}/prospects/${id}`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ user_notes: notes })
                 });
                 // Silent save - no toast needed
             } catch (e) {
-                showToast('Failed to save notes', 'error');
+                showToast('Couldn\'t save your notes. Please try again.', 'error');
             }
         }
 
@@ -3584,7 +3941,7 @@
             document.getElementById('page-title').textContent = 'Campaigns';
 
             try {
-                const campaigns = await fetch(`${API}/campaigns`).then(r => r.json());
+                const campaigns = await authFetch(`${API}/campaigns`).then(r => r.json());
 
                 document.getElementById('page-content').innerHTML = `
                     <div class="flex justify-between items-center mb-6">
@@ -3620,29 +3977,27 @@
                                 </div>
                             `).join('')}
                         </div>
-                    ` : `
-                        <div class="text-center py-12 text-zinc-500">
-                            <p>No campaigns yet.</p>
-                            <p class="text-sm mt-2">Save a search as a campaign to run it again later.</p>
-                        </div>
-                    `}
+                    ` : renderEmptyState('campaigns')}
                 `;
 
                 lucide.createIcons();
 
             } catch (e) {
-                document.getElementById('page-content').innerHTML = `
-                    <div class="text-center py-12">
-                        <div class="text-red-400 mb-2">Failed to load campaigns</div>
-                        <div class="text-sm text-zinc-500">${e.message}</div>
-                    </div>
-                `;
+                document.getElementById('page-content').innerHTML = renderErrorState(
+                    'Couldn\'t Load Campaigns',
+                    'We had trouble fetching your saved campaigns. Please check your connection and try again.',
+                    [
+                        { label: 'Try Again', onClick: 'loadCampaignsPage()', primary: true },
+                        { label: 'Go to Dashboard', onClick: "navigateTo('dashboard')" }
+                    ]
+                );
+                lucide.createIcons();
             }
         }
 
         async function loadCampaigns() {
             try {
-                const campaigns = await fetch(`${API}/campaigns`).then(r => r.json());
+                const campaigns = await authFetch(`${API}/campaigns`).then(r => r.json());
 
                 const container = document.getElementById('campaign-list');
                 container.innerHTML = campaigns.slice(0, 5).map(c => `
@@ -3661,7 +4016,7 @@
         async function runCampaign(id) {
             showToast('Running campaign...', 'info');
             try {
-                const res = await fetch(`${API}/campaigns/${id}/run`, { method: 'POST' });
+                const res = await authFetch(`${API}/campaigns/${id}/run`, { method: 'POST' });
                 const data = await res.json();
 
                 // Navigate to search and show progress
@@ -3676,7 +4031,7 @@
                 }, 100);
 
             } catch (e) {
-                showToast('Failed to run campaign', 'error');
+                showToast('Couldn\'t start the campaign. Please check your connection and try again.', 'error');
             }
         }
 
@@ -3684,12 +4039,12 @@
             if (!confirm('Delete this campaign?')) return;
 
             try {
-                await fetch(`${API}/campaigns/${id}`, { method: 'DELETE' });
+                await authFetch(`${API}/campaigns/${id}`, { method: 'DELETE' });
                 showToast('Campaign deleted', 'success');
                 loadCampaignsPage();
                 loadCampaigns();
             } catch (e) {
-                showToast('Failed to delete campaign', 'error');
+                showToast('Couldn\'t delete the campaign. Please try again.', 'error');
             }
         }
 
@@ -3700,7 +4055,7 @@
             const limit = form.limit.value;
 
             if (!business_type || !location) {
-                showToast('Fill in business type and location first', 'error');
+                showToast('Please fill in business type and location first.', 'error');
                 return;
             }
 
@@ -3712,7 +4067,7 @@
 
         async function saveCampaign(name, business_type, location, limit) {
             try {
-                await fetch(`${API}/campaigns`, {
+                await authFetch(`${API}/campaigns`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ name, business_type, location, limit })
@@ -3720,7 +4075,7 @@
                 showToast('Campaign saved!', 'success');
                 loadCampaigns();
             } catch (e) {
-                showToast('Failed to save campaign', 'error');
+                showToast('Couldn\'t save the campaign. Please try again.', 'error');
             }
         }
 
@@ -3848,14 +4203,14 @@
         async function exportProspects(format) {
             try {
                 // Get latest job ID
-                const jobs = await fetch(`${API}/jobs?limit=1`).then(r => r.json());
+                const jobs = await authFetch(`${API}/jobs?limit=1`).then(r => r.json());
                 if (jobs.length > 0) {
                     window.open(`${API}/jobs/${jobs[0].id}/results?format=${format}`, '_blank');
                 } else {
-                    showToast('No search results to export', 'error');
+                    showToast('No search results to export. Run a search first!', 'error');
                 }
             } catch (e) {
-                showToast('Export failed', 'error');
+                showToast('Couldn\'t export the file. Please try again.', 'error');
             }
         }
 

@@ -21,11 +21,16 @@ STATIC_DIR = WEB_DIR / "static"
 FRONTEND_DIR = WEB_DIR / "frontend"
 
 
-def create_app() -> FastAPI:
+def create_app(skip_db_init: bool = False) -> FastAPI:
     """Create and configure the FastAPI application."""
 
-    # Initialize database
-    init_db()
+    # Initialize database (can be skipped for testing)
+    if not skip_db_init:
+        try:
+            init_db()
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            logger.warning("Continuing without database initialization")
 
     app = FastAPI(
         title="Prospect Command Center",
@@ -73,6 +78,22 @@ def create_app() -> FastAPI:
         frontend_path = FRONTEND_DIR / "index.html"
         if frontend_path.exists():
             return HTMLResponse(content=frontend_path.read_text())
+
+    @app.get("/login", response_class=HTMLResponse)
+    async def login_page():
+        login_path = TEMPLATES_DIR / "login.html"
+        if login_path.exists():
+            return HTMLResponse(content=login_path.read_text())
+        return HTMLResponse(content="Login page not found", status_code=404)
+
+    @app.get("/register", response_class=HTMLResponse)
+    async def register_page():
+        register_path = TEMPLATES_DIR / "register.html"
+        if register_path.exists():
+            return HTMLResponse(content=register_path.read_text())
+        return HTMLResponse(content="Register page not found", status_code=404)
+
+
         else:
             # Redirect to legacy UI if new frontend not found
             from fastapi.responses import RedirectResponse
@@ -105,6 +126,14 @@ def create_app() -> FastAPI:
     # Serve frontend static files
     if FRONTEND_DIR.exists():
         app.mount("/app", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+
+    # Startup event for async initialization
+    @app.on_event("startup")
+    async def startup_event():
+        """Initialize resources on startup."""
+        logger.info("Prospect Command Center starting up...")
+        logger.info(f"Frontend directory: {FRONTEND_DIR}")
+        logger.info(f"Templates directory: {TEMPLATES_DIR}")
 
     return app
 
