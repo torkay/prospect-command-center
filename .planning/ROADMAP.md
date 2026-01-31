@@ -105,7 +105,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Production Hardening | 1/1 | Complete | 2026-01-31 |
-| 2. Onboarding Experience | 0/TBD | Not started | - |
+| 2. Onboarding Experience | 1/2 | In progress | - |
 | 3. Score Visibility | 0/TBD | Not started | - |
 | 4. Pipeline/CRM | 0/TBD | Not started | - |
 | 5. Outreach Templates | 0/TBD | Not started | - |
