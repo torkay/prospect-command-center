@@ -1858,9 +1858,110 @@
         .pull-indicator.pulling {
             transform: translateX(-50%) translateY(20px);
         }
+
+        /* Welcome Modal */
+        .welcome-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+
+        .welcome-modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .welcome-modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .welcome-modal-overlay.visible .welcome-modal {
+            transform: scale(1);
+        }
+
+        .welcome-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            background: rgba(34, 197, 94, 0.15);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-modal-icon i {
+            width: 32px;
+            height: 32px;
+            color: var(--accent);
+        }
+
+        .welcome-modal h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .welcome-modal p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .welcome-modal .btn-primary {
+            width: 100%;
+            justify-content: center;
+            padding: 14px 24px;
+            font-size: 16px;
+        }
+
+        .welcome-modal .skip-link {
+            display: block;
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .welcome-modal .skip-link:hover {
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
+    <!-- Welcome Modal -->
+    <div id="welcome-modal-overlay" class="welcome-modal-overlay" onclick="handleWelcomeOverlayClick(event)">
+        <div class="welcome-modal" onclick="event.stopPropagation()">
+            <div class="welcome-modal-icon">
+                <i data-lucide="radar"></i>
+            </div>
+            <h2>Welcome to PCC</h2>
+            <p>You're about to run professional-grade company research. Let's do your first search together — it takes 30 seconds.</p>
+            <button class="btn-primary" onclick="startOnboarding()">
+                Let's go
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+            <span class="skip-link" onclick="skipOnboarding()">I'll figure it out</span>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="p-4 border-b border-zinc-800">
@@ -2105,6 +2206,23 @@
         let currentFilters = {};
         let selectedProspects = new Set();
         let currentJobId = null;
+        let onboardingChecked = false;
+
+        // ============================================
+        // Auth Helper
+        // ============================================
+        // Simple fetch wrapper - currently no auth required for most endpoints
+        // Future: Add JWT token from localStorage if needed
+        function authFetch(url, options = {}) {
+            const token = localStorage.getItem('pcc_token');
+            if (token) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`,
+                };
+            }
+            return fetch(url, options);
+        }
 
         // British/Australian English strings
         const STRINGS = {
@@ -2309,13 +2427,99 @@
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             await checkApiStatus();
+            await checkOnboardingStatus();  // Check if we should show welcome modal
             await loadDashboard();
             await loadDashboardCounts();  // Load sidebar counts
             setupKeyboardShortcuts();
             setupNavigation();
             loadCampaigns();
             updateLayoutForDevice();
+            setupWelcomeModalKeyboard();
         });
+
+        // ============================================
+        // Onboarding / Welcome Modal
+        // ============================================
+        async function checkOnboardingStatus() {
+            if (onboardingChecked) return;
+            onboardingChecked = true;
+
+            try {
+                const res = await authFetch(`${API}/onboarding/status`);
+
+                // If 401 (not authenticated), don't show modal
+                if (res.status === 401) {
+                    return;
+                }
+
+                const data = await res.json();
+
+                // Show welcome modal if onboarding not started (step 0)
+                if (!data.completed && data.current_step === 0) {
+                    showWelcomeModal();
+                }
+            } catch (e) {
+                // Silently fail - don't block app if onboarding check fails
+                console.log('Onboarding status check failed:', e);
+            }
+        }
+
+        function showWelcomeModal() {
+            const overlay = document.getElementById('welcome-modal-overlay');
+            if (overlay) {
+                overlay.classList.add('visible');
+                // Refresh icons inside modal
+                lucide.createIcons();
+            }
+        }
+
+        function hideWelcomeModal() {
+            const overlay = document.getElementById('welcome-modal-overlay');
+            if (overlay) {
+                overlay.classList.remove('visible');
+            }
+        }
+
+        function handleWelcomeOverlayClick(event) {
+            // Close modal when clicking outside
+            if (event.target.id === 'welcome-modal-overlay') {
+                skipOnboarding();
+            }
+        }
+
+        function setupWelcomeModalKeyboard() {
+            document.addEventListener('keydown', (e) => {
+                const overlay = document.getElementById('welcome-modal-overlay');
+                if (overlay && overlay.classList.contains('visible') && e.key === 'Escape') {
+                    skipOnboarding();
+                }
+            });
+        }
+
+        async function startOnboarding() {
+            try {
+                // Mark welcome_seen step as complete
+                await authFetch(`${API}/onboarding/step/welcome_seen`, { method: 'POST' });
+            } catch (e) {
+                console.log('Failed to mark onboarding step:', e);
+            }
+
+            hideWelcomeModal();
+
+            // Navigate to search page to guide first search
+            navigateTo('search');
+        }
+
+        async function skipOnboarding() {
+            try {
+                // Skip onboarding entirely
+                await authFetch(`${API}/onboarding/skip`, { method: 'POST' });
+            } catch (e) {
+                console.log('Failed to skip onboarding:', e);
+            }
+
+            hideWelcomeModal();
+        }
 
         // ============================================
         // API Status
