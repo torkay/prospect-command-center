@@ -1943,6 +1943,372 @@
         .welcome-modal .skip-link:hover {
             color: var(--text-secondary);
         }
+
+        /* ============================================
+           ONBOARDING TOUR
+           ============================================ */
+
+        .tour-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 180;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+
+        .tour-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .tour-highlight {
+            position: relative;
+            z-index: 190;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4), 0 0 0 9999px rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+        }
+
+        @keyframes tour-pulse {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4), 0 0 0 9999px rgba(0, 0, 0, 0.6); }
+            50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2), 0 0 0 9999px rgba(0, 0, 0, 0.6); }
+        }
+
+        .tour-highlight.pulse {
+            animation: tour-pulse 1.5s ease-in-out infinite;
+        }
+
+        .tour-tooltip {
+            position: fixed;
+            z-index: 195;
+            max-width: 360px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+        }
+
+        .tour-tooltip.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .tour-tooltip-arrow {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            transform: rotate(45deg);
+        }
+
+        .tour-tooltip-arrow.top {
+            top: -7px;
+            left: 24px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .tour-tooltip-arrow.bottom {
+            bottom: -7px;
+            left: 24px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .tour-tooltip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .tour-tooltip-step {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+        }
+
+        .tour-tooltip-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .tour-tooltip-body {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .tour-tooltip-guide {
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .tour-tooltip-guide-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .tour-tooltip-guide-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            color: var(--text-secondary);
+        }
+
+        .tour-tooltip-guide-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .tour-score-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .tour-score-indicator.high { background: #4ade80; }
+        .tour-score-indicator.med { background: #facc15; }
+        .tour-score-indicator.low { background: #f87171; }
+
+        .tour-tooltip-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .tour-skip-link {
+            font-size: 13px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .tour-skip-link:hover {
+            color: var(--text-secondary);
+        }
+
+        .tour-next-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: var(--accent);
+            color: #000;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .tour-next-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .tour-next-btn i {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Toast for completion */
+        .tour-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(100%);
+            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+        }
+
+        .tour-toast.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .tour-toast-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(34, 197, 94, 0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tour-toast-icon i {
+            width: 18px;
+            height: 18px;
+            color: var(--accent);
+        }
+
+        .tour-toast-content {
+            flex: 1;
+        }
+
+        .tour-toast-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .tour-toast-body {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Rich Score Tooltips */
+        .rich-tooltip {
+            position: fixed;
+            z-index: 150;
+            width: 280px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(5px);
+            transition: opacity 0.15s, visibility 0.15s, transform 0.15s;
+            pointer-events: none;
+        }
+
+        .rich-tooltip.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .rich-tooltip-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .rich-tooltip-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rich-tooltip-icon.fit {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .rich-tooltip-icon.opportunity {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+        }
+
+        .rich-tooltip-icon.priority {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .rich-tooltip-icon i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .rich-tooltip-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .rich-tooltip-body {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .rich-tooltip-scale {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .rich-tooltip-scale-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .rich-tooltip-scale-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .rich-tooltip-scale-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .rich-tooltip-scale-dot.high { background: #4ade80; }
+        .rich-tooltip-scale-dot.low { background: #f87171; }
+
+        /* Mobile tour adjustments */
+        @media (max-width: 640px) {
+            .tour-tooltip {
+                position: fixed;
+                bottom: calc(var(--bottom-nav-height) + 16px + var(--safe-area-bottom));
+                left: 16px;
+                right: 16px;
+                max-width: none;
+            }
+
+            .tour-tooltip-arrow {
+                display: none;
+            }
+
+            .tour-toast {
+                bottom: calc(var(--bottom-nav-height) + 16px + var(--safe-area-bottom));
+                left: 16px;
+                right: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1959,6 +2325,53 @@
                 <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </button>
             <span class="skip-link" onclick="skipOnboarding()">I'll figure it out</span>
+        </div>
+    </div>
+
+    <!-- Onboarding Tour Tooltip -->
+    <div id="tour-tooltip" class="tour-tooltip">
+        <div class="tour-tooltip-arrow top" id="tour-arrow"></div>
+        <div class="tour-tooltip-header">
+            <span class="tour-tooltip-step" id="tour-step-indicator">Step 1 of 4</span>
+        </div>
+        <div class="tour-tooltip-title" id="tour-title">Start here</div>
+        <div class="tour-tooltip-body" id="tour-body">
+            Type any company name. We'll pull their credibility score and full profile.
+        </div>
+        <div class="tour-tooltip-guide" id="tour-guide" style="display: none;">
+            <!-- Dynamic guide content -->
+        </div>
+        <div class="tour-tooltip-actions">
+            <span class="tour-skip-link" onclick="tourManager.skip()">Skip tour</span>
+            <button class="tour-next-btn" id="tour-next-btn" onclick="tourManager.next()">
+                Got it
+                <i data-lucide="arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Onboarding Completion Toast -->
+    <div id="tour-toast" class="tour-toast">
+        <div class="tour-toast-icon">
+            <i data-lucide="check-circle"></i>
+        </div>
+        <div class="tour-toast-content">
+            <div class="tour-toast-title">Nice work!</div>
+            <div class="tour-toast-body">You've completed your first search. The rest works the same way.</div>
+        </div>
+    </div>
+
+    <!-- Rich Score Tooltip (shared instance) -->
+    <div id="rich-tooltip" class="rich-tooltip">
+        <div class="rich-tooltip-header">
+            <div class="rich-tooltip-icon" id="rich-tooltip-icon">
+                <i data-lucide="target"></i>
+            </div>
+            <div class="rich-tooltip-title" id="rich-tooltip-title">Score</div>
+        </div>
+        <div class="rich-tooltip-body" id="rich-tooltip-body">Description</div>
+        <div class="rich-tooltip-scale" id="rich-tooltip-scale">
+            <!-- Dynamic scale content -->
         </div>
     </div>
 
@@ -2435,6 +2848,10 @@
             loadCampaigns();
             updateLayoutForDevice();
             setupWelcomeModalKeyboard();
+            setupRichTooltips();  // Initialize rich score tooltips
+
+            // Resume onboarding tour if it was in progress
+            tourManager.resume();
         });
 
         // ============================================
@@ -2496,6 +2913,310 @@
             });
         }
 
+        // ============================================
+        // Onboarding Tour Manager
+        // ============================================
+        const tourManager = {
+            currentStep: 0,
+            isActive: false,
+            highlightedElement: null,
+
+            // Tour steps configuration
+            steps: [
+                {
+                    id: 'search-input',
+                    targetSelector: 'input[name="business_type"]',
+                    title: 'Start here',
+                    body: 'Type any company name. We\'ll pull their credibility score and full profile.',
+                    position: 'bottom',
+                    pulse: true,
+                    waitForEvent: null // First step shows immediately after welcome
+                },
+                {
+                    id: 'results-score',
+                    targetSelector: '.score-tooltip',
+                    title: 'This is their Credibility Score',
+                    body: '0-100 based on 50+ signals. Higher = more established and trustworthy.',
+                    guide: {
+                        title: 'Quick guide:',
+                        items: [
+                            { score: 'high', text: '80+ = Strong credibility' },
+                            { score: 'med', text: '60-79 = Solid, some gaps' },
+                            { score: 'med', text: '40-59 = Mixed signals, dig deeper' },
+                            { score: 'low', text: 'Below 40 = Significant concerns' }
+                        ]
+                    },
+                    position: 'bottom',
+                    pulse: false,
+                    waitForEvent: 'results-loaded' // Wait for search results
+                },
+                {
+                    id: 'score-breakdown',
+                    targetSelector: 'td .score-tooltip',
+                    title: 'Click to see why',
+                    body: 'The overall score is useful. The breakdown shows you exactly what\'s driving it — reachability, opportunity signals, and priority ranking.',
+                    position: 'top',
+                    pulse: true,
+                    waitForEvent: null
+                },
+                {
+                    id: 'completion',
+                    targetSelector: null, // No target - shows toast
+                    title: 'Nice work!',
+                    body: 'You\'ve completed your first search. The rest works the same way.',
+                    position: null,
+                    pulse: false,
+                    waitForEvent: null
+                }
+            ],
+
+            start() {
+                this.isActive = true;
+                this.currentStep = 0;
+                sessionStorage.setItem('pcc_tour_step', '0');
+                sessionStorage.setItem('pcc_tour_active', 'true');
+                this.showStep(0);
+            },
+
+            resume() {
+                const savedStep = sessionStorage.getItem('pcc_tour_step');
+                const tourActive = sessionStorage.getItem('pcc_tour_active');
+
+                if (tourActive === 'true' && savedStep !== null) {
+                    this.isActive = true;
+                    this.currentStep = parseInt(savedStep, 10);
+
+                    // If we're waiting for results, set up the listener
+                    if (this.currentStep === 1) {
+                        this.setupResultsListener();
+                    } else if (this.currentStep < this.steps.length) {
+                        this.showStep(this.currentStep);
+                    }
+                    return true;
+                }
+                return false;
+            },
+
+            showStep(stepIndex) {
+                if (stepIndex >= this.steps.length) {
+                    this.complete();
+                    return;
+                }
+
+                const step = this.steps[stepIndex];
+
+                // Completion step - show toast instead
+                if (stepIndex === this.steps.length - 1) {
+                    this.complete();
+                    return;
+                }
+
+                // Check if we need to wait for an event
+                if (step.waitForEvent === 'results-loaded' && stepIndex === this.currentStep) {
+                    this.setupResultsListener();
+                    return;
+                }
+
+                // Find target element
+                const target = document.querySelector(step.targetSelector);
+                if (!target) {
+                    console.log('Tour: Target not found for step', stepIndex, step.targetSelector);
+                    // If target not found and we should wait for it, set up observer
+                    if (step.waitForEvent === 'results-loaded') {
+                        this.setupResultsListener();
+                    }
+                    return;
+                }
+
+                // Clear previous highlight
+                this.clearHighlight();
+
+                // Highlight target
+                this.highlightElement(target, step.pulse);
+
+                // Position and show tooltip
+                this.positionTooltip(target, step);
+                this.updateTooltipContent(step, stepIndex);
+                this.showTooltip();
+
+                // Scroll target into view if needed
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            },
+
+            highlightElement(element, pulse = false) {
+                element.classList.add('tour-highlight');
+                if (pulse) {
+                    element.classList.add('pulse');
+                }
+                this.highlightedElement = element;
+            },
+
+            clearHighlight() {
+                if (this.highlightedElement) {
+                    this.highlightedElement.classList.remove('tour-highlight', 'pulse');
+                    this.highlightedElement = null;
+                }
+                // Also clear any other highlighted elements
+                document.querySelectorAll('.tour-highlight').forEach(el => {
+                    el.classList.remove('tour-highlight', 'pulse');
+                });
+            },
+
+            positionTooltip(target, step) {
+                const tooltip = document.getElementById('tour-tooltip');
+                const arrow = document.getElementById('tour-arrow');
+                const rect = target.getBoundingClientRect();
+
+                // Reset arrow classes
+                arrow.className = 'tour-tooltip-arrow';
+
+                if (step.position === 'bottom') {
+                    tooltip.style.top = `${rect.bottom + 16}px`;
+                    tooltip.style.left = `${Math.max(16, rect.left)}px`;
+                    arrow.classList.add('top');
+                    arrow.style.left = '24px';
+                } else if (step.position === 'top') {
+                    const tooltipHeight = tooltip.offsetHeight || 200;
+                    tooltip.style.top = `${rect.top - tooltipHeight - 16}px`;
+                    tooltip.style.left = `${Math.max(16, rect.left)}px`;
+                    arrow.classList.add('bottom');
+                    arrow.style.left = '24px';
+                }
+
+                // Ensure tooltip doesn't go off screen
+                const tooltipRect = tooltip.getBoundingClientRect();
+                if (tooltipRect.right > window.innerWidth - 16) {
+                    tooltip.style.left = `${window.innerWidth - tooltip.offsetWidth - 16}px`;
+                }
+            },
+
+            updateTooltipContent(step, stepIndex) {
+                document.getElementById('tour-step-indicator').textContent = `Step ${stepIndex + 1} of ${this.steps.length - 1}`;
+                document.getElementById('tour-title').textContent = step.title;
+                document.getElementById('tour-body').textContent = step.body;
+
+                // Handle guide section
+                const guideEl = document.getElementById('tour-guide');
+                if (step.guide) {
+                    guideEl.style.display = 'block';
+                    guideEl.innerHTML = `
+                        <div class="tour-tooltip-guide-title">${step.guide.title}</div>
+                        ${step.guide.items.map(item => `
+                            <div class="tour-tooltip-guide-item">
+                                <span class="tour-score-indicator ${item.score}"></span>
+                                <span>${item.text}</span>
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    guideEl.style.display = 'none';
+                }
+
+                // Refresh Lucide icons
+                lucide.createIcons();
+            },
+
+            showTooltip() {
+                document.getElementById('tour-tooltip').classList.add('visible');
+            },
+
+            hideTooltip() {
+                document.getElementById('tour-tooltip').classList.remove('visible');
+            },
+
+            next() {
+                this.hideTooltip();
+                this.clearHighlight();
+
+                this.currentStep++;
+                sessionStorage.setItem('pcc_tour_step', this.currentStep.toString());
+
+                // Check if next step needs to wait for results
+                if (this.currentStep < this.steps.length - 1) {
+                    const nextStep = this.steps[this.currentStep];
+                    if (nextStep.waitForEvent === 'results-loaded') {
+                        // Step 1 waits for search results - will be triggered by HTMX event
+                        this.setupResultsListener();
+                        return;
+                    }
+                }
+
+                // Show next step after a small delay
+                setTimeout(() => this.showStep(this.currentStep), 300);
+            },
+
+            skip() {
+                this.hideTooltip();
+                this.clearHighlight();
+                this.isActive = false;
+                sessionStorage.removeItem('pcc_tour_step');
+                sessionStorage.removeItem('pcc_tour_active');
+
+                // Mark onboarding as skipped via API
+                authFetch(`${API}/onboarding/skip`, { method: 'POST' }).catch(console.log);
+            },
+
+            complete() {
+                this.hideTooltip();
+                this.clearHighlight();
+                this.isActive = false;
+                sessionStorage.removeItem('pcc_tour_step');
+                sessionStorage.removeItem('pcc_tour_active');
+
+                // Show completion toast
+                this.showCompletionToast();
+
+                // Mark first_search step complete
+                authFetch(`${API}/onboarding/step/first_search`, { method: 'POST' }).catch(console.log);
+            },
+
+            showCompletionToast() {
+                const toast = document.getElementById('tour-toast');
+                toast.classList.add('visible');
+                lucide.createIcons();
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    toast.classList.remove('visible');
+                }, 5000);
+            },
+
+            setupResultsListener() {
+                // Listen for HTMX events indicating results have loaded
+                const handler = (event) => {
+                    // Check if this is the prospects page loading or results being shown
+                    if (this.isActive && this.currentStep === 1) {
+                        // Small delay to let DOM update
+                        setTimeout(() => {
+                            const scoreElement = document.querySelector('.score-tooltip');
+                            if (scoreElement) {
+                                document.body.removeEventListener('htmx:afterSwap', handler);
+                                this.showStep(1);
+                            }
+                        }, 500);
+                    }
+                };
+
+                document.body.addEventListener('htmx:afterSwap', handler);
+
+                // Also set up a MutationObserver as backup for non-HTMX updates
+                const observer = new MutationObserver((mutations) => {
+                    if (this.isActive && this.currentStep === 1) {
+                        const scoreElement = document.querySelector('.score-tooltip');
+                        if (scoreElement) {
+                            observer.disconnect();
+                            setTimeout(() => this.showStep(1), 500);
+                        }
+                    }
+                });
+
+                observer.observe(document.getElementById('page-content'), {
+                    childList: true,
+                    subtree: true
+                });
+            }
+        };
+
         async function startOnboarding() {
             try {
                 // Mark welcome_seen step as complete
@@ -2506,8 +3227,13 @@
 
             hideWelcomeModal();
 
-            // Navigate to search page to guide first search
+            // Navigate to search page and start tour
             navigateTo('search');
+
+            // Start tour after page transition
+            setTimeout(() => {
+                tourManager.start();
+            }, 300);
         }
 
         async function skipOnboarding() {
@@ -2519,6 +3245,177 @@
             }
 
             hideWelcomeModal();
+        }
+
+        // ============================================
+        // Rich Score Tooltips
+        // ============================================
+        const richTooltipConfig = {
+            fit: {
+                icon: 'user-check',
+                iconClass: 'fit',
+                title: 'Fit Score',
+                body: 'How reachable is this prospect? Based on contact info availability — phone, email, address.',
+                scale: [
+                    { dot: 'high', text: 'High (60+) = Easy to contact' },
+                    { dot: 'low', text: 'Low (<40) = Hard to reach' }
+                ]
+            },
+            opportunity: {
+                icon: 'trending-up',
+                iconClass: 'opportunity',
+                title: 'Opportunity Score',
+                body: 'How much do they need marketing help? Based on missing analytics, old CMS, no booking system, slow site.',
+                scale: [
+                    { dot: 'high', text: 'High (60+) = Significant gaps' },
+                    { dot: 'low', text: 'Low (<40) = Already well-equipped' }
+                ]
+            },
+            priority: {
+                icon: 'star',
+                iconClass: 'priority',
+                title: 'Priority Score',
+                body: 'Combined ranking score. Higher = better prospect to contact first.',
+                scale: [
+                    { dot: 'high', text: 'Formula: Fit × Opportunity weighted' }
+                ]
+            }
+        };
+
+        let richTooltipTimeout = null;
+        let scoreTooltipHoverTracked = false;
+
+        function setupRichTooltips() {
+            // Use event delegation for dynamically created score tooltips
+            document.body.addEventListener('mouseenter', handleScoreTooltipEnter, true);
+            document.body.addEventListener('mouseleave', handleScoreTooltipLeave, true);
+
+            // Touch support
+            document.body.addEventListener('touchstart', handleScoreTooltipTouch, true);
+        }
+
+        function handleScoreTooltipEnter(event) {
+            const target = event.target.closest('.score-tooltip');
+            if (!target) return;
+
+            const tooltipText = target.getAttribute('data-tooltip') || '';
+            let tooltipType = 'priority';
+
+            if (tooltipText.toLowerCase().includes('fit')) {
+                tooltipType = 'fit';
+            } else if (tooltipText.toLowerCase().includes('opportunity') || tooltipText.toLowerCase().includes('opp')) {
+                tooltipType = 'opportunity';
+            }
+
+            showRichTooltip(target, tooltipType);
+
+            // Track first tooltip hover for onboarding completion
+            trackScoreTooltipHover();
+        }
+
+        function handleScoreTooltipLeave(event) {
+            const target = event.target.closest('.score-tooltip');
+            if (!target) return;
+
+            hideRichTooltip();
+        }
+
+        function handleScoreTooltipTouch(event) {
+            const target = event.target.closest('.score-tooltip');
+            if (!target) return;
+
+            // Toggle tooltip on touch
+            const tooltip = document.getElementById('rich-tooltip');
+            if (tooltip.classList.contains('visible')) {
+                hideRichTooltip();
+            } else {
+                const tooltipText = target.getAttribute('data-tooltip') || '';
+                let tooltipType = 'priority';
+
+                if (tooltipText.toLowerCase().includes('fit')) {
+                    tooltipType = 'fit';
+                } else if (tooltipText.toLowerCase().includes('opportunity') || tooltipText.toLowerCase().includes('opp')) {
+                    tooltipType = 'opportunity';
+                }
+
+                showRichTooltip(target, tooltipType);
+                trackScoreTooltipHover();
+            }
+        }
+
+        function showRichTooltip(target, type) {
+            const config = richTooltipConfig[type];
+            if (!config) return;
+
+            const tooltip = document.getElementById('rich-tooltip');
+            const iconEl = document.getElementById('rich-tooltip-icon');
+            const titleEl = document.getElementById('rich-tooltip-title');
+            const bodyEl = document.getElementById('rich-tooltip-body');
+            const scaleEl = document.getElementById('rich-tooltip-scale');
+
+            // Update content
+            iconEl.className = `rich-tooltip-icon ${config.iconClass}`;
+            iconEl.innerHTML = `<i data-lucide="${config.icon}"></i>`;
+            titleEl.textContent = config.title;
+            bodyEl.textContent = config.body;
+
+            // Update scale
+            scaleEl.innerHTML = config.scale.map(item => `
+                <div class="rich-tooltip-scale-row">
+                    <span class="rich-tooltip-scale-dot ${item.dot}"></span>
+                    <span>${item.text}</span>
+                </div>
+            `).join('');
+
+            // Position tooltip above target
+            const rect = target.getBoundingClientRect();
+            tooltip.style.left = `${rect.left}px`;
+            tooltip.style.top = `${rect.top - tooltip.offsetHeight - 8}px`;
+
+            // Adjust if off-screen
+            const tooltipRect = tooltip.getBoundingClientRect();
+            if (tooltipRect.top < 8) {
+                // Show below instead
+                tooltip.style.top = `${rect.bottom + 8}px`;
+            }
+            if (tooltipRect.right > window.innerWidth - 8) {
+                tooltip.style.left = `${window.innerWidth - tooltip.offsetWidth - 8}px`;
+            }
+            if (tooltipRect.left < 8) {
+                tooltip.style.left = '8px';
+            }
+
+            // Show tooltip
+            tooltip.classList.add('visible');
+            lucide.createIcons();
+
+            // Clear any existing timeout
+            if (richTooltipTimeout) {
+                clearTimeout(richTooltipTimeout);
+            }
+        }
+
+        function hideRichTooltip() {
+            // Delay hiding to allow moving to tooltip
+            richTooltipTimeout = setTimeout(() => {
+                document.getElementById('rich-tooltip').classList.remove('visible');
+            }, 100);
+        }
+
+        function trackScoreTooltipHover() {
+            // Only track once per session
+            if (scoreTooltipHoverTracked) return;
+            if (sessionStorage.getItem('pcc_score_tooltip_seen')) return;
+
+            scoreTooltipHoverTracked = true;
+            sessionStorage.setItem('pcc_score_tooltip_seen', 'true');
+
+            // Mark score_explained step complete (this completes onboarding)
+            authFetch(`${API}/onboarding/step/score_explained`, { method: 'POST' })
+                .then(() => {
+                    console.log('Onboarding complete: score_explained step marked');
+                })
+                .catch(console.log);
         }
 
         // ============================================
@@ -3539,6 +4436,11 @@
                         await updateProspectStatus(id, status);
                     });
                 });
+
+                // Trigger onboarding tour step if active and waiting for results
+                if (tourManager.isActive && tourManager.currentStep === 1 && prospects.length > 0) {
+                    setTimeout(() => tourManager.showStep(1), 500);
+                }
 
             } catch (e) {
                 document.getElementById('page-content').innerHTML = renderErrorState(
