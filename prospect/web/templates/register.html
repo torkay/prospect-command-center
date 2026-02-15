@@ -46,6 +46,36 @@
     
     <script>
         const API = "/api/v1";
+        const MARKETING_EVENTS = "/api/v1/marketing/events";
+
+        function track(event, properties = {}) {
+            try {
+                const utm = {};
+                const u = new URL(window.location.href);
+                for (const k of ["utm_source","utm_medium","utm_campaign","utm_term","utm_content"]) {
+                    const v = u.searchParams.get(k);
+                    if (v) utm[k] = v;
+                }
+
+                fetch(MARKETING_EVENTS, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        event,
+                        properties,
+                        path: window.location.pathname,
+                        page_url: window.location.href,
+                        referrer: document.referrer || null,
+                        utm
+                    }),
+                    keepalive: true
+                }).catch(() => {});
+            } catch {
+                // ignore
+            }
+        }
+
+        track("marketing.page_view", { page: "register" });
         
         document.getElementById("register-form").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -53,6 +83,8 @@
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
             const error = document.getElementById("error");
+
+            track("marketing.trial_form_submit", { method: "password" });
             
             try {
                 const res = await fetch(`${API}/auth/register`, {
@@ -64,6 +96,7 @@
                 const data = await res.json();
                 
                 if (!res.ok) {
+                    track("marketing.trial_signup_failure", { detail: data.detail || "Registration failed" });
                     error.textContent = data.detail || "Registration failed";
                     error.classList.remove("hidden");
                     return;
@@ -71,8 +104,10 @@
                 
                 localStorage.setItem("token", data.access_token);
                 localStorage.setItem("user", JSON.stringify(data.user));
+                track("marketing.trial_signup_success", { email_domain: (email.split("@")[1] || "").toLowerCase() });
                 window.location.href = "/app";
             } catch (err) {
+                track("marketing.trial_signup_failure", { detail: "network_error" });
                 error.textContent = "Network error. Please try again.";
                 error.classList.remove("hidden");
             }

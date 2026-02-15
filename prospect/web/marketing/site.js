@@ -69,7 +69,7 @@
   function trackClick(el){
     const name = el.getAttribute('data-track');
     if (!name) return;
-    post('cta_clicked', {
+    post('marketing.cta_click', {
       name,
       text: (el.textContent || '').trim().slice(0, 80)
     });
@@ -82,7 +82,7 @@
 
     // funnel hint for Start trial links
     const t = el.getAttribute('data-track') || '';
-    if (t.includes('start_trial')) post('signup_started', { source: t });
+    if (t.includes('start_trial')) post('marketing.signup_started', { source: t });
   });
 
   // scroll depth
@@ -99,7 +99,7 @@
       for (const m of marks){
         if (pct >= m && !fired.has(m)){
           fired.add(m);
-          post('scroll_depth', { percent: m });
+          post('marketing.scroll_depth', { percent: m });
         }
       }
     }
@@ -118,12 +118,12 @@
       panel.hidden = open;
       hint.hidden = !open;
       btn.textContent = open ? 'View a sample' : 'Hide the sample';
-      post('sample_toggled', { open: !open });
+      post('marketing.sample_toggled', { open: !open });
     });
   }
 
   const y = document.getElementById('year');
   if (y) y.textContent = String(new Date().getFullYear());
 
-  post('page_view', { title: document.title });
+  post('marketing.page_view', { title: document.title });
 })();

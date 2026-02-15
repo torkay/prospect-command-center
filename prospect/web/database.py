@@ -73,9 +73,17 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
 
+    # Email preferences
+    email_notifications = Column(Boolean, default=True)
+
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login_at = Column(DateTime, nullable=True)
+
+    # Onboarding
+    onboarding_completed = Column(Boolean, default=False)
+    onboarding_step = Column(Integer, default=0)  # 0=not started, 1=welcome, 2=first_search, 3=understand_scores, 4=complete
+    first_login_at = Column(DateTime, nullable=True)
 
     # Relationships
     searches = relationship("Search", back_populates="user")
@@ -345,6 +353,49 @@ class ExportHistory(Base):
     sheet_url = Column(String(500), nullable=True)
 
 
+class MarketingEvent(Base):
+    """Marketing events tracked for anonymous activity analysis."""
+    __tablename__ = "marketing_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_name = Column(String(255), nullable=False, index=True)
+    event_type = Column(String(100), nullable=True)
+    source = Column(String(255), nullable=True)
+    campaign = Column(String(255), nullable=True)
+    anonymous_id = Column(String(255), nullable=True)
+    client_id = Column(String(255), nullable=True)
+    page_url = Column(String(500), nullable=True)
+    occurred_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    # 'metadata' is reserved in SQLAlchemy Declarative models.
+    event_metadata = Column("metadata", JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    leads = relationship("MarketingLead", back_populates="event")
+
+
+class MarketingLead(Base):
+    """Leads captured from marketing forms or events."""
+    __tablename__ = "marketing_leads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("marketing_events.id"), nullable=True, index=True)
+    name = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True, index=True)
+    phone = Column(String(50), nullable=True)
+    company = Column(String(255), nullable=True)
+    job_title = Column(String(255), nullable=True)
+    source = Column(String(255), nullable=True)
+    campaign = Column(String(255), nullable=True)
+    utm_source = Column(String(255), nullable=True)
+    utm_medium = Column(String(255), nullable=True)
+    utm_campaign = Column(String(255), nullable=True)
+    # 'metadata' is reserved in SQLAlchemy Declarative models.
+    lead_metadata = Column("metadata", JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    event = relationship("MarketingEvent", back_populates="leads")
+
+
 def seed_search_configs(db: Session) -> None:
     """Seed default search configurations."""
     configs = [
@@ -423,25 +474,45 @@ def seed_search_configs(db: Session) -> None:
         },
     ]
 
-    for config in configs:
-        existing = db.query(SearchConfig).filter(SearchConfig.name == config["name"]).first()
-        if not existing:
-            db.add(SearchConfig(**config))
+    try:
+        for config in configs:
+            existing = db.query(SearchConfig).filter(SearchConfig.name == config["name"]).first()
+            if not existing:
+                db.add(SearchConfig(**config))
+                logger.debug(f"Added search config: {config['name']}")
 
-    db.commit()
-    logger.debug("Search configs seeded")
+        db.commit()
+        logger.info("Search configs seeded successfully")
+    except Exception as e:
+        logger.error(f"Error in seed_search_configs: {e}")
+        db.rollback()
+        raise
 
 
 def init_db():
     """Initialize database tables and seed data."""
-    Base.metadata.create_all(bind=engine)
-
-    # Seed search configs
-    db = SessionLocal()
     try:
-        seed_search_configs(db)
-    finally:
-        db.close()
+        logger.info(f"Initializing database at: {DATABASE_URL}")
+
+        # Create tables (non-blocking for SQLite)
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully")
+
+        # Seed search configs in a separate session
+        db = SessionLocal()
+        try:
+            seed_search_configs(db)
+            logger.info("Search configs seeded successfully")
+        except Exception as e:
+            logger.error(f"Error seeding search configs: {e}")
+            db.rollback()
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"Database initialization error: {e}")
+        # Don't fail the app startup, just log the error
+        pass
 
 
 def get_db() -> Generator[Session, None, None]:

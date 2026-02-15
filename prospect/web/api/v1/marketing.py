@@ -53,7 +53,7 @@ def ingest_event(payload: MarketingEventIn, request: Request, db: Session = Depe
         client_id=payload.client_id or payload.session_id,
         page_url=page_url,
         occurred_at=datetime.utcnow(),
-        metadata={
+        event_metadata={
             "properties": payload.properties,
             "utm": payload.utm,
             "path": payload.path,

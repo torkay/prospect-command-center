@@ -18,7 +18,6 @@ from prospect.web.api.v1.usage import (
     increment_search_usage,
     get_usage_summary,
 )
-from prospect.scraper.orchestrator import SearchOrchestrator
 
 router = APIRouter()
 
@@ -83,6 +82,9 @@ def estimate_search(
 
     Returns query expansion, location expansion, and cost estimate.
     """
+    # Heavy import (Playwright stack) deferred to keep app startup fast.
+    from prospect.scraper.orchestrator import SearchOrchestrator
+
     config = get_search_config(db, request.depth.value)
     orchestrator = SearchOrchestrator()
 

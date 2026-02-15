@@ -104,6 +104,20 @@ def create_app(skip_db_init: bool = False) -> FastAPI:
             return HTMLResponse(content=register_path.read_text())
         return HTMLResponse(content="Register page not found", status_code=404)
 
+    # Root service worker kill-switch (retires any previous / scope SW).
+    @app.get("/sw.js")
+    async def root_service_worker():
+        from fastapi.responses import FileResponse
+
+        path = MARKETING_DIR / "sw-kill.js"
+        if not path.exists():
+            return Response(content="", media_type="application/javascript")
+
+        resp = FileResponse(path, media_type="application/javascript")
+        # Ensure browsers re-fetch updates; service worker updates respect HTTP caching.
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
     @app.get("/robots.txt")
     async def robots_txt():
         from fastapi.responses import FileResponse

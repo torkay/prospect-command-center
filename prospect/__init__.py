@@ -47,6 +47,19 @@ def get_version() -> str:
     return version
 
 
-from prospect.api import search_prospects, ProspectResult
+def __getattr__(name: str):
+    """
+    Lazy exports.
+
+    Avoid importing heavyweight modules (scrapers/enrichment/etc.) at package import time.
+    This keeps `import prospect` fast and prevents side effects during app startup.
+    """
+    if name in ("search_prospects", "ProspectResult"):
+        from prospect.api import search_prospects, ProspectResult  # local import by design
+
+        globals()["search_prospects"] = search_prospects
+        globals()["ProspectResult"] = ProspectResult
+        return globals()[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = ["search_prospects", "ProspectResult", "__version__", "get_version", "VERSION_INFO"]
