@@ -10,6 +10,7 @@ from prospect.scraper.serpapi import SerpAPIClient
 from prospect.scraper.locations import get_nearby_suburbs, expand_query_variations
 from prospect.dedup import deduplicate_serp_results
 from prospect.models import Prospect, SerpResults, MapsResult
+from prospect import _native
 
 logger = logging.getLogger(__name__)
 
@@ -337,6 +338,8 @@ class SearchOrchestrator:
 
     def _cache_key(self, query: str, location: str) -> str:
         """Generate cache key for query/location combo."""
+        if _native.fast_cache_key is not None:
+            return _native.fast_cache_key(query, location)
         raw = f"{query.lower()}|{location.lower()}"
         return hashlib.md5(raw.encode()).hexdigest()
 

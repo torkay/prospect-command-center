@@ -37,6 +37,18 @@ calculate_fit_score = None
 calculate_opportunity_score = None
 score_prospects_batch = None
 
+# Geo / cache (orchestrator.py / locations.py)
+fast_cache_key = None
+haversine_distance = None
+batch_haversine = None
+
+# Export serialization (export.py)
+serialize_prospects_csv = None
+serialize_prospects_json = None
+
+# HTML metadata extraction (crawler.py)
+extract_html_metadata = None
+
 AVAILABLE = False
 
 try:
@@ -63,6 +75,15 @@ try:
     calculate_fit_score = _n.calculate_fit_score
     calculate_opportunity_score = _n.calculate_opportunity_score
     score_prospects_batch = _n.score_prospects_batch
+
+    fast_cache_key = _n.fast_cache_key
+    haversine_distance = _n.haversine_distance
+    batch_haversine = _n.batch_haversine
+
+    serialize_prospects_csv = _n.serialize_prospects_csv
+    serialize_prospects_json = _n.serialize_prospects_json
+
+    extract_html_metadata = _n.extract_html_metadata
 
     AVAILABLE = True
     _logger.info("Rust native acceleration loaded successfully")

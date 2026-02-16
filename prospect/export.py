@@ -8,9 +8,51 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from . import _native
 from .models import Prospect
 
 logger = logging.getLogger(__name__)
+
+
+def _prospect_to_native_dict(p: Prospect) -> dict:
+    """Convert a Prospect to a flat dict suitable for native Rust serialization."""
+    d = {
+        "name": p.name,
+        "website": p.website,
+        "domain": p.domain,
+        "phone": p.phone,
+        "address": p.address,
+        "emails": p.emails or [],
+        "rating": p.rating,
+        "review_count": p.review_count,
+        "category": p.category,
+        "found_in_ads": p.found_in_ads,
+        "ad_position": p.ad_position,
+        "found_in_maps": p.found_in_maps,
+        "maps_position": p.maps_position,
+        "found_in_organic": p.found_in_organic,
+        "organic_position": p.organic_position,
+        "fit_score": p.fit_score,
+        "opportunity_score": p.opportunity_score,
+        "priority_score": p.priority_score,
+        "opportunity_notes": p.opportunity_notes,
+        "source": p.source,
+        "scraped_at": p.scraped_at.isoformat() if p.scraped_at else None,
+    }
+    if p.signals:
+        d["signals"] = {
+            "reachable": p.signals.reachable,
+            "cms": p.signals.cms,
+            "has_google_analytics": p.signals.has_google_analytics,
+            "has_facebook_pixel": p.signals.has_facebook_pixel,
+            "has_google_ads": p.signals.has_google_ads,
+            "has_booking_system": p.signals.has_booking_system,
+            "load_time_ms": p.signals.load_time_ms,
+            "title": p.signals.title,
+            "meta_description": p.signals.meta_description,
+            "social_links": p.signals.social_links or [],
+        }
+    return d
 
 
 def export_to_csv(
@@ -142,6 +184,27 @@ def export_to_json(
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    if _native.serialize_prospects_json is not None:
+        dicts = [_prospect_to_native_dict(p) for p in prospects]
+        prospects_json = _native.serialize_prospects_json(dicts, pretty)
+        # Wrap in the envelope with metadata
+        if pretty:
+            envelope = json.dumps({
+                "exported_at": datetime.now().isoformat(),
+                "total_prospects": len(prospects),
+                "prospects": json.loads(prospects_json),
+            }, indent=2, default=str)
+        else:
+            envelope = json.dumps({
+                "exported_at": datetime.now().isoformat(),
+                "total_prospects": len(prospects),
+                "prospects": json.loads(prospects_json),
+            }, default=str)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(envelope)
+        logger.info("Exported %d prospects to %s (native)", len(prospects), output_path)
+        return str(output_path)
+
     data = {
         "exported_at": datetime.now().isoformat(),
         "total_prospects": len(prospects),
@@ -255,6 +318,10 @@ def export_csv_string(prospects: list[Prospect]) -> str:
     Returns:
         CSV content as string
     """
+    if _native.serialize_prospects_csv is not None:
+        dicts = [_prospect_to_native_dict(p) for p in prospects]
+        return _native.serialize_prospects_csv(dicts)
+
     output = io.StringIO()
 
     fieldnames = [

@@ -3,7 +3,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, case, and_
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -158,24 +158,32 @@ def get_prospect_stats(
     search_id: Optional[int] = None,
 ):
     """Get aggregate stats for prospects - returns all status counts explicitly."""
-    # Filter by user through search relationship
-    base_query = db.query(Prospect).join(Search).filter(Search.user_id == current_user.id)
-    if search_id:
-        base_query = base_query.filter(Prospect.search_id == search_id)
-
-    total = base_query.count()
-
-    # Build status breakdown with all statuses (including zeros)
+    # Query 1: Status breakdown via GROUP BY (replaces 7 separate COUNT queries)
     all_statuses = ['new', 'qualified', 'contacted', 'meeting', 'won', 'lost', 'skipped']
-    status_breakdown = {}
-    for status in all_statuses:
-        count_query = db.query(Prospect).join(Search).filter(
-            Search.user_id == current_user.id,
-            Prospect.status == status
-        )
-        if search_id:
-            count_query = count_query.filter(Prospect.search_id == search_id)
-        status_breakdown[status] = count_query.count()
+    status_breakdown = {s: 0 for s in all_statuses}
+
+    status_counts = db.query(
+        Prospect.status, func.count(Prospect.id)
+    ).join(Search).filter(Search.user_id == current_user.id)
+    if search_id:
+        status_counts = status_counts.filter(Prospect.search_id == search_id)
+    for status, count in status_counts.group_by(Prospect.status).all():
+        if status in status_breakdown:
+            status_breakdown[status] = count
+
+    # Query 2: Total, averages, email/phone counts in one pass
+    stats = db.query(
+        func.count(Prospect.id).label('total'),
+        func.avg(Prospect.fit_score),
+        func.avg(Prospect.opportunity_score),
+        func.avg(Prospect.priority_score),
+        func.count(case((and_(Prospect.emails.isnot(None), Prospect.emails != ""), 1))),
+        func.count(case((and_(Prospect.phone.isnot(None), Prospect.phone != ""), 1))),
+    ).join(Search).filter(Search.user_id == current_user.id)
+    if search_id:
+        stats = stats.filter(Prospect.search_id == search_id)
+    result = stats.first()
+    total, avg_fit, avg_opp, avg_pri, with_email, with_phone = result
 
     if total == 0:
         return ProspectStats(
@@ -189,45 +197,12 @@ def get_prospect_stats(
             contact_rate=0,
         )
 
-    # Score averages (need to join with Search for user filtering)
-    avg_query = db.query(
-        func.avg(Prospect.fit_score),
-        func.avg(Prospect.opportunity_score),
-        func.avg(Prospect.priority_score)
-    ).join(Search).filter(Search.user_id == current_user.id)
-    if search_id:
-        avg_query = avg_query.filter(Prospect.search_id == search_id)
-    averages = avg_query.first()
-
-    avg_fit = averages[0] or 0
-    avg_opp = averages[1] or 0
-    avg_pri = averages[2] or 0
-
-    # With contact info (requery with user filter)
-    email_query = db.query(Prospect).join(Search).filter(
-        Search.user_id == current_user.id,
-        Prospect.emails.isnot(None),
-        Prospect.emails != ""
-    )
-    if search_id:
-        email_query = email_query.filter(Prospect.search_id == search_id)
-    with_email = email_query.count()
-
-    phone_query = db.query(Prospect).join(Search).filter(
-        Search.user_id == current_user.id,
-        Prospect.phone.isnot(None),
-        Prospect.phone != ""
-    )
-    if search_id:
-        phone_query = phone_query.filter(Prospect.search_id == search_id)
-    with_phone = phone_query.count()
-
     return ProspectStats(
         total=total,
         status_breakdown=status_breakdown,
-        avg_fit_score=round(float(avg_fit), 1),
-        avg_opportunity_score=round(float(avg_opp), 1),
-        avg_priority_score=round(float(avg_pri), 1),
+        avg_fit_score=round(float(avg_fit or 0), 1),
+        avg_opportunity_score=round(float(avg_opp or 0), 1),
+        avg_priority_score=round(float(avg_pri or 0), 1),
         with_email=with_email,
         with_phone=with_phone,
         contact_rate=round(with_email / total * 100, 1) if total > 0 else 0,

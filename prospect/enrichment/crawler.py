@@ -16,6 +16,7 @@ from .contacts import extract_emails, extract_phones
 from .technology import detect_cms, detect_tracking, detect_booking_system
 from ..validation import filter_emails_for_domain
 from ..dedup import normalize_domain
+from .. import _native
 
 logger = logging.getLogger(__name__)
 
@@ -202,21 +203,23 @@ class WebsiteCrawler:
         except Exception as e:
             logger.debug("Failed to detect booking system for %s: %s", url, e)
 
-        # Extract metadata
+        # Extract metadata + social links (native Rust or BeautifulSoup fallback)
         try:
-            title_tag = soup.find("title")
-            if title_tag:
-                signals.title = title_tag.get_text(strip=True)
+            if _native.extract_html_metadata is not None:
+                meta = _native.extract_html_metadata(result.html)
+                signals.title = meta.get("title")
+                signals.meta_description = meta.get("meta_description")
+                signals.social_links = meta.get("social_links", [])
+            else:
+                title_tag = soup.find("title")
+                if title_tag:
+                    signals.title = title_tag.get_text(strip=True)
 
-            meta_desc = soup.find("meta", attrs={"name": "description"})
-            if meta_desc:
-                signals.meta_description = meta_desc.get("content", "")
-        except Exception:
-            pass
+                meta_desc = soup.find("meta", attrs={"name": "description"})
+                if meta_desc:
+                    signals.meta_description = meta_desc.get("content", "")
 
-        # Extract social links
-        try:
-            signals.social_links = self._extract_social_links(soup)
+                signals.social_links = self._extract_social_links(soup)
         except Exception:
             pass
 

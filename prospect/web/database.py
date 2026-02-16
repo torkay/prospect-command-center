@@ -529,39 +529,38 @@ def save_prospects_from_results(db: Session, search_id: int, results: list) -> L
     Save prospect results to database.
 
     Converts search results (Prospect model from models.py) to database Prospect records.
+    Uses bulk_insert_mappings for efficient batch insertion.
     """
-    prospects = []
+    prospect_dicts = []
     for r in results:
-        # Extract emails as comma-separated string
         emails = ",".join(r.emails) if r.emails else None
+        prospect_dicts.append({
+            "search_id": search_id,
+            "domain": r.domain,
+            "name": r.name,
+            "website": r.website,
+            "phone": r.phone,
+            "emails": emails,
+            "address": r.address,
+            "rating": r.rating,
+            "review_count": r.review_count,
+            "found_in_ads": r.found_in_ads,
+            "found_in_maps": r.found_in_maps,
+            "found_in_organic": r.found_in_organic,
+            "organic_position": r.organic_position,
+            "maps_position": r.maps_position,
+            "cms": r.signals.cms if r.signals else None,
+            "has_analytics": r.signals.has_google_analytics if r.signals else False,
+            "has_facebook_pixel": r.signals.has_facebook_pixel if r.signals else False,
+            "has_booking": r.signals.has_booking_system if r.signals else False,
+            "load_time_ms": r.signals.load_time_ms if r.signals else None,
+            "fit_score": r.fit_score,
+            "opportunity_score": r.opportunity_score,
+            "priority_score": r.priority_score,
+            "opportunity_notes": r.opportunity_notes,
+        })
 
-        prospect = Prospect(
-            search_id=search_id,
-            domain=r.domain,
-            name=r.name,
-            website=r.website,
-            phone=r.phone,
-            emails=emails,
-            address=r.address,
-            rating=r.rating,
-            review_count=r.review_count,
-            found_in_ads=r.found_in_ads,
-            found_in_maps=r.found_in_maps,
-            found_in_organic=r.found_in_organic,
-            organic_position=r.organic_position,
-            maps_position=r.maps_position,
-            cms=r.signals.cms if r.signals else None,
-            has_analytics=r.signals.has_google_analytics if r.signals else False,
-            has_facebook_pixel=r.signals.has_facebook_pixel if r.signals else False,
-            has_booking=r.signals.has_booking_system if r.signals else False,
-            load_time_ms=r.signals.load_time_ms if r.signals else None,
-            fit_score=r.fit_score,
-            opportunity_score=r.opportunity_score,
-            priority_score=r.priority_score,
-            opportunity_notes=r.opportunity_notes,
-        )
-        db.add(prospect)
-        prospects.append(prospect)
-
+    db.bulk_insert_mappings(Prospect, prospect_dicts)
     db.commit()
-    return prospects
+
+    return db.query(Prospect).filter(Prospect.search_id == search_id).all()

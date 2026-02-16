@@ -4,6 +4,8 @@ import math
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 
+from prospect import _native
+
 
 @dataclass
 class Location:
@@ -157,6 +159,9 @@ AUSTRALIAN_LOCATIONS: Dict[str, List[Location]] = {
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate distance between two points in kilometres."""
+    if _native.haversine_distance is not None:
+        return _native.haversine_distance(lat1, lon1, lat2, lon2)
+
     R = 6371  # Earth's radius in km
 
     lat1_rad = math.radians(lat1)
@@ -226,17 +231,27 @@ def get_nearby_suburbs(
     suburbs = AUSTRALIAN_LOCATIONS[base_city]
     nearby: List[tuple] = []
 
-    for suburb in suburbs:
-        if suburb.name == base_location.name:
-            continue
+    # Use batch Rust haversine if available
+    if _native.batch_haversine is not None:
+        other_suburbs = [(s, i) for i, s in enumerate(suburbs) if s.name != base_location.name]
+        if other_suburbs:
+            points = [(s.lat, s.lng) for s, _ in other_suburbs]
+            distances = _native.batch_haversine(base_location.lat, base_location.lng, points)
+            for (suburb, _), distance in zip(other_suburbs, distances):
+                if distance <= radius_km:
+                    nearby.append((suburb.name, distance))
+    else:
+        for suburb in suburbs:
+            if suburb.name == base_location.name:
+                continue
 
-        distance = haversine_distance(
-            base_location.lat, base_location.lng,
-            suburb.lat, suburb.lng
-        )
+            distance = haversine_distance(
+                base_location.lat, base_location.lng,
+                suburb.lat, suburb.lng
+            )
 
-        if distance <= radius_km:
-            nearby.append((suburb.name, distance))
+            if distance <= radius_km:
+                nearby.append((suburb.name, distance))
 
     # Sort by distance and limit
     nearby.sort(key=lambda x: x[1])
